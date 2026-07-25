@@ -1262,23 +1262,6 @@
 
         console.log(`Found ${meshes.length} named meshes`);
 
-        // Summarize resolved groups (all modes)
-        const debugGroups = {};
-        meshes.forEach(m => { debugGroups[m.zhName] = (debugGroups[m.zhName]||0)+1; });
-        console.log('Resolved groups:', JSON.stringify(debugGroups));
-        console.log(`Total: ${groups.size} parts, ${meshes.length} meshes`);
-
-        // Optimization: for Ferrari, merge decals into main body to reduce part count
-        if (useParentGroup && decalsGroup) {
-          const bodyZh = parentGroupMap['Main Body'] ? parentGroupMap['Main Body'].zh : '车身主体';
-          meshes.forEach(m => {
-            if (m.zhName === decalsGroup.zh) {
-              m.zhName = bodyZh;
-              m.category = parentGroupMap['Main Body'].cat;
-            }
-          });
-        }
-
         // Group meshes by Chinese name (multiple meshes may share the same name)
         const groups = new Map(); // zhName → { meshes[], category }
         const catParts = {};      // category → count
@@ -1291,8 +1274,10 @@
           groups.get(m.zhName).meshes.push(m);
         }
 
+        const debugGroups = {};
+        groups.forEach((g, name) => { debugGroups[name] = g.meshes.length; });
+        console.log('Resolved groups:', JSON.stringify(debugGroups));
         console.log(`Grouped into ${groups.size} parts across ${Object.keys(catParts).length} categories`);
-        console.log('Parts per category:', catParts);
 
         // Debug: show first few parts' explosion data
         if (groups.size > 0) {
