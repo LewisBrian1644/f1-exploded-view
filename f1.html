@@ -697,29 +697,48 @@
         modelPath: 'ferrari-f1-2019/scene.gltf',
         cameraPos: [4, 1.8, 6],
         cameraTarget: [0, 0.0, 0.3],
-        groupBy: 'parentGroup', // 通过父节点名称识别部件
-        parentGroupMap: {
-          'Main Body':        { zh: '车身主体',       cat: 'chassis' },
-          'Exhaust':          { zh: '排气系统',       cat: 'powerunit' },
-          'Rear Transmission':{ zh: '后传动系统',     cat: 'powerunit' },
-          'Antennas':         { zh: '天线',           cat: 'elec' },
-          'Seat':             { zh: '座椅',           cat: 'cockpit' },
-          'Steering Wheel':   { zh: '方向盘',         cat: 'elec' },
-          'Gears':            { zh: '换挡拨片',       cat: 'elec' },
-          'Its for something':{ zh: '内部零件',       cat: 'chassis' },
-          'Ferrari Button':   { zh: '控制旋钮',       cat: 'elec' },
-          'Buttons':          { zh: '按钮组',         cat: 'elec' },
-          'Grip Button':      { zh: '握把按钮',       cat: 'elec' },
-          'Tire FL':          { zh: '左前轮胎',       cat: 'wheels' },
-          'Rim FL':           { zh: '左前轮辋',       cat: 'wheels' },
-          'Tire FR':          { zh: '右前轮胎',       cat: 'wheels' },
-          'Rim FR':           { zh: '右前轮辋',       cat: 'wheels' },
-          'Tire RL':          { zh: '左后轮胎',       cat: 'wheels' },
-          'Rim RL':           { zh: '左后轮辋',       cat: 'wheels' },
-          'Tire RL.001':      { zh: '右后轮胎',       cat: 'wheels' },
-          'Rim RL.001':       { zh: '右后轮辋',       cat: 'wheels' },
+        groupBy: 'objectName',  // 通过 gltf 节点名称映射（Object_8 → 左前轮胎 等）
+        objectNames: {
+          // 车身主体 (Main Body)
+          'Object_8':  { zh: '车身主体',       cat: 'chassis' },
+          'Object_10': { zh: '车身面板A',      cat: 'chassis' },
+          'Object_12': { zh: '车身面板B',      cat: 'chassis' },
+          'Object_14': { zh: '车身面板C',      cat: 'chassis' },
+          // 动力单元
+          'Object_17': { zh: '排气系统',       cat: 'powerunit' },
+          'Object_20': { zh: '后传动系统',     cat: 'powerunit' },
+          // 电子/其他
+          'Object_23': { zh: '天线',           cat: 'elec' },
+          'Object_53': { zh: '方向盘',         cat: 'elec' },
+          'Object_56': { zh: '换挡拨片',       cat: 'elec' },
+          'Object_59': { zh: '内部零件',       cat: 'chassis' },
+          'Object_62': { zh: '控制旋钮',       cat: 'elec' },
+          'Object_65': { zh: '按钮组',         cat: 'elec' },
+          'Object_68': { zh: '握把按钮',       cat: 'elec' },
+          // 座舱
+          'Object_26': { zh: '座椅',           cat: 'cockpit' },
+          // 左前
+          'Object_29': { zh: '左前轮胎',       cat: 'wheels' },
+          'Object_32': { zh: '左前轮辋',       cat: 'wheels' },
+          // 右前
+          'Object_35': { zh: '右前轮胎',       cat: 'wheels' },
+          'Object_38': { zh: '右前轮辋',       cat: 'wheels' },
+          // 左后
+          'Object_41': { zh: '左后轮胎',       cat: 'wheels' },
+          'Object_44': { zh: '左后轮辋',       cat: 'wheels' },
+          // 右后
+          'Object_47': { zh: '右后轮胎',       cat: 'wheels' },
+          'Object_50': { zh: '右后轮辋',       cat: 'wheels' },
+          // 贴花 (全部合并到车身)
+          'Object_71': { zh: '赞助商贴花',     cat: 'chassis' },
+          'Object_74': { zh: '赞助商贴花',     cat: 'chassis' },
+          'Object_77': { zh: '赞助商贴花',     cat: 'chassis' },
+          'Object_80': { zh: '赞助商贴花',     cat: 'chassis' },
+          'Object_83': { zh: '赞助商贴花',     cat: 'chassis' },
+          'Object_86': { zh: '赞助商贴花',     cat: 'chassis' },
+          'Object_89': { zh: '赞助商贴花',     cat: 'chassis' },
         },
-        decalsGroup: { zh: '赞助商贴花', cat: 'chassis' }, // 所有 Decal* 归入此组
+        // 所有剩余未命名的 Object_* 如果没有匹配就归入车身
       },
     ];
 
@@ -1214,7 +1233,7 @@
                 category = 'chassis';
               }
             } else {
-              // AMR26-style: use Object_# and named mesh mappings
+              // Object_# or named mesh mappings (AMR26, Ferrari)
               const objInfo = resolveObjectName(child.name);
               if (objInfo) {
                 zhName = objInfo.zh;
@@ -1225,8 +1244,14 @@
                   zhName = namedInfo.zh;
                   category = namedInfo.cat;
                 } else {
-                  zhName = child.name.replace(/_/g, ' ');
-                  category = 'chassis';
+                  // Fallback: unmapped Object_* → use car's default
+                  if (/^Object_\d+$/.test(child.name) && currentCar.decalsGroup) {
+                    zhName = currentCar.decalsGroup.zh;
+                    category = currentCar.decalsGroup.cat;
+                  } else {
+                    zhName = child.name.replace(/_/g, ' ');
+                    category = 'chassis';
+                  }
                 }
               }
             }
