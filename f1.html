@@ -1270,12 +1270,11 @@
 
         console.log(`Found ${meshes.length} named meshes`);
 
-        // Summarize resolved groups
-        if (useParentGroup) {
-          const debugGroups = {};
-          meshes.forEach(m => { debugGroups[m.zhName] = (debugGroups[m.zhName]||0)+1; });
-          console.log('Resolved groups:', JSON.stringify(debugGroups));
-        }
+        // Summarize resolved groups (all modes)
+        const debugGroups = {};
+        meshes.forEach(m => { debugGroups[m.zhName] = (debugGroups[m.zhName]||0)+1; });
+        console.log('Resolved groups:', JSON.stringify(debugGroups));
+        console.log(`Total: ${groups.size} parts, ${meshes.length} meshes`);
 
         // Optimization: for Ferrari, merge decals into main body to reduce part count
         if (useParentGroup && decalsGroup) {
