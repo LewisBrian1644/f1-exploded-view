@@ -1,0 +1,1827 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>F1 爆炸视图 - 2026 Aston Martin AMR26</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='28' font-size='28'%3E%F0%9F%8F%8E%3C/text%3E%3C/svg%3E">
+  <script>
+    (function() {
+      var state = JSON.parse(localStorage.getItem('f1-state') || '{}');
+      if (state.theme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    })();
+  </script>
+
+  <!-- Three.js Import Map -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <style>
+    /* ===== CSS Variables / Theming ===== */
+    :root {
+      --color-bg:           #1a1a1a;
+      --color-surface:      #2a2a2a;
+      --color-surface-alt:  #333333;
+      --color-text:         #e8e8e8;
+      --color-text-muted:   #999999;
+      --color-primary:      #e10600;
+      --color-primary-hover:#ff1a14;
+      --color-accent:       #3498db;
+      --color-accent-hover: #5dade2;
+      --color-border:       #404040;
+      --color-shadow:       rgba(0,0,0,0.5);
+      --color-glass:        rgba(30,30,30,0.92);
+      --radius:             12px;
+      --radius-sm:          8px;
+      --font-mono:          'Consolas', 'Courier New', monospace;
+      --font-sans:          -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+      --transition-theme:   background-color 0.3s, color 0.3s, border-color 0.3s, box-shadow 0.3s;
+
+      /* F1 Category Colors */
+      --cat-powerunit:      #e74c3c;
+      --cat-chassis:        #f39c12;
+      --cat-aero:           #3498db;
+      --cat-suspension:     #2ecc71;
+      --cat-elec:           #9b59b6;
+      --cat-cooling:        #1abc9c;
+      --cat-cockpit:        #e67e22;
+      --cat-wheels:         #95a5a6;
+    }
+
+    [data-theme="light"] {
+      --color-bg:           #f0f2f5;
+      --color-surface:      #ffffff;
+      --color-surface-alt:  #f8f9fa;
+      --color-text:         #212529;
+      --color-text-muted:   #6c757d;
+      --color-primary:      #e10600;
+      --color-primary-hover:#c70500;
+      --color-accent:       #2980b9;
+      --color-accent-hover: #1a6a9a;
+      --color-border:       #dee2e6;
+      --color-shadow:       rgba(0,0,0,0.1);
+      --color-glass:        rgba(255,255,255,0.92);
+    }
+
+    /* ===== Reset & Base ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-bg);
+      color: var(--color-text);
+      height: 100vh;
+      overflow: hidden;
+      transition: var(--transition-theme);
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ===== Main Layout ===== */
+    #app {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      grid-template-columns: 260px 1fr 320px;
+      grid-template-areas:
+        "header  header header"
+        "sidebar canvas info"
+        "bottombar bottombar bottombar";
+      height: 100vh;
+    }
+
+    /* ===== Header ===== */
+    #header {
+      grid-area: header;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.5rem 1rem;
+      background: var(--color-surface);
+      border-bottom: 1px solid var(--color-border);
+      z-index: 10;
+    }
+
+    #header .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    #header .logo .f1-badge {
+      background: var(--color-primary);
+      color: #fff;
+      font-weight: 900;
+      font-style: italic;
+      padding: 0.15rem 0.5rem;
+      border-radius: 3px;
+      font-size: 0.9rem;
+      letter-spacing: -0.02em;
+    }
+
+    #header .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .icon-btn {
+      background: var(--color-surface-alt);
+      border: 1px solid var(--color-border);
+      color: var(--color-text);
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition-theme), transform 0.15s;
+    }
+
+    .icon-btn:hover {
+      background: var(--color-border);
+      transform: scale(1.05);
+    }
+
+    .icon-btn:active {
+      transform: scale(0.95);
+    }
+
+    /* ===== 3D Canvas Container ===== */
+    #canvas-container {
+      grid-area: canvas;
+      position: relative;
+      cursor: grab;
+    }
+
+    #canvas-container:active {
+      cursor: grabbing;
+    }
+
+    #canvas-container canvas {
+      display: block;
+    }
+
+    /* ===== Loading Overlay ===== */
+    #loading-overlay {
+      position: absolute;
+      inset: 0;
+      background: var(--color-bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      z-index: 50;
+      transition: opacity 0.5s, visibility 0.5s;
+    }
+
+    #loading-overlay.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    #loading-overlay .spinner {
+      width: 48px;
+      height: 48px;
+      border: 3px solid var(--color-border);
+      border-top-color: var(--color-primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    #loading-overlay .progress-bar {
+      width: 260px;
+      height: 4px;
+      background: var(--color-border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    #loading-overlay .progress-fill {
+      height: 100%;
+      background: var(--color-primary);
+      border-radius: 2px;
+      width: 0%;
+      transition: width 0.3s;
+    }
+
+    #loading-overlay .loading-text {
+      font-size: 0.85rem;
+      color: var(--color-text-muted);
+    }
+
+    /* ===== Sidebar - Category Filters ===== */
+    #sidebar {
+      grid-area: sidebar;
+      background: var(--color-surface);
+      border-right: 1px solid var(--color-border);
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      overflow-y: auto;
+      z-index: 5;
+    }
+
+    #sidebar .section-title {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--color-text-muted);
+      margin-bottom: 0.25rem;
+      margin-top: 0.5rem;
+    }
+
+    #sidebar .section-title:first-child {
+      margin-top: 0;
+    }
+
+    #sidebar .part-count {
+      font-size: 0.7rem;
+      color: var(--color-text-muted);
+      margin-left: auto;
+    }
+
+    .cat-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.55rem 0.75rem;
+      border: 2px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      background: transparent;
+      color: var(--color-text);
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-family: var(--font-sans);
+      transition: var(--transition-theme), transform 0.12s, border-color 0.2s;
+      text-align: left;
+      width: 100%;
+    }
+
+    .cat-btn:hover {
+      border-color: var(--color-text-muted);
+    }
+
+    .cat-btn:active {
+      transform: scale(0.97);
+    }
+
+    .cat-btn .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .cat-btn.active {
+      border-color: var(--cat-color, var(--color-accent));
+      background: color-mix(in srgb, var(--cat-color, var(--color-accent)) 10%, transparent);
+    }
+
+    /* ===== Info Panel ===== */
+    #info-panel {
+      grid-area: info;
+      background: var(--color-surface);
+      border-left: 1px solid var(--color-border);
+      padding: 1rem;
+      overflow-y: auto;
+      z-index: 5;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+    }
+
+    #info-panel.hidden {
+      opacity: 0.4;
+    }
+
+    #info-panel .panel-placeholder {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-text-muted);
+      text-align: center;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+    }
+
+    #info-panel .panel-placeholder .icon {
+      font-size: 3rem;
+      opacity: 0.3;
+    }
+
+    #info-panel .panel-content {
+      display: none;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    #info-panel.has-selection .panel-placeholder {
+      display: none;
+    }
+
+    #info-panel.has-selection .panel-content {
+      display: flex;
+    }
+
+    #info-panel .part-name {
+      font-size: 1.15rem;
+      font-weight: 700;
+    }
+
+    #info-panel .part-category {
+      display: inline-block;
+      padding: 0.2rem 0.6rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #fff;
+      background: var(--cat-color);
+      align-self: flex-start;
+    }
+
+    #info-panel .part-function {
+      font-size: 0.88rem;
+      line-height: 1.5;
+      color: var(--color-text);
+    }
+
+    #info-panel .part-specs {
+      list-style: none;
+      padding: 0;
+    }
+
+    #info-panel .part-specs li {
+      font-size: 0.82rem;
+      padding: 0.35rem 0;
+      border-bottom: 1px solid var(--color-border);
+      color: var(--color-text-muted);
+    }
+
+    #info-panel .part-specs li:last-child {
+      border-bottom: none;
+    }
+
+    #info-panel .part-specs li::before {
+      content: '▸ ';
+      color: var(--color-primary);
+    }
+
+    /* ===== Bottom Bar - Explosion Slider ===== */
+    #bottombar {
+      grid-area: bottombar;
+      background: var(--color-surface);
+      border-top: 1px solid var(--color-border);
+      padding: 0.6rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      z-index: 10;
+    }
+
+    #bottombar .slider-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--color-text-muted);
+      white-space: nowrap;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    #explosion-slider {
+      flex: 1;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 6px;
+      border-radius: 3px;
+      background: var(--color-border);
+      outline: none;
+      cursor: pointer;
+    }
+
+    #explosion-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--color-primary);
+      border: 3px solid var(--color-surface);
+      cursor: pointer;
+      box-shadow: 0 2px 6px var(--color-shadow);
+      transition: transform 0.1s;
+    }
+
+    #explosion-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+    }
+
+    #bottombar .slider-value {
+      font-size: 0.9rem;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      color: var(--color-primary);
+      min-width: 3rem;
+      text-align: right;
+    }
+
+    #bottombar .hint {
+      font-size: 0.72rem;
+      color: var(--color-text-muted);
+      white-space: nowrap;
+      margin-left: auto;
+    }
+
+    /* Car selector */
+    #car-selector {
+      padding: 0.35rem 0.6rem;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      background: var(--color-surface-alt);
+      color: var(--color-text);
+      font-size: 0.78rem;
+      font-family: var(--font-sans);
+      cursor: pointer;
+      outline: none;
+      transition: var(--transition-theme);
+    }
+
+    #car-selector:hover {
+      border-color: var(--color-primary);
+    }
+
+    #car-selector:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* ===== Toast ===== */
+    #toast {
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--color-surface);
+      color: var(--color-text);
+      border: 1px solid var(--color-border);
+      padding: 0.6rem 1.2rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      box-shadow: 0 4px 16px var(--color-shadow);
+      opacity: 0;
+      transition: opacity 0.3s, transform 0.3s;
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    #toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ===== Responsive - Tablet ===== */
+    @media (max-width: 1200px) {
+      #app {
+        grid-template-columns: 220px 1fr 280px;
+      }
+    }
+
+    /* ===== Responsive - Mobile ===== */
+    @media (max-width: 860px) {
+      #app {
+        grid-template-rows: auto 1fr auto auto;
+        grid-template-columns: 1fr;
+        grid-template-areas:
+          "header"
+          "canvas"
+          "categories"
+          "bottombar";
+      }
+
+      #sidebar {
+        grid-area: categories;
+        border-right: none;
+        border-top: 1px solid var(--color-border);
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+        padding: 0.5rem;
+        overflow-y: visible;
+      }
+
+      #sidebar .section-title {
+        display: none;
+      }
+
+      .cat-btn {
+        font-size: 0.72rem;
+        padding: 0.35rem 0.55rem;
+        gap: 0.3rem;
+        white-space: nowrap;
+      }
+
+      .cat-btn .dot {
+        width: 8px;
+        height: 8px;
+      }
+
+      #info-panel {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        max-height: 40vh;
+        border-left: none;
+        border-top: 1px solid var(--color-border);
+        border-radius: 16px 16px 0 0;
+        transform: translateY(100%);
+        transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 -4px 20px var(--color-shadow);
+        z-index: 20;
+      }
+
+      #info-panel.sheet-open {
+        transform: translateY(0);
+      }
+
+      #bottombar {
+        padding: 0.5rem 1rem;
+        gap: 0.6rem;
+      }
+
+      #bottombar .hint {
+        display: none;
+      }
+    }
+
+    @media (max-width: 480px) {
+      #header .logo span:last-child {
+        display: none;
+      }
+
+      #bottombar .slider-label {
+        font-size: 0.7rem;
+      }
+
+      .cat-btn {
+        font-size: 0.68rem;
+        padding: 0.3rem 0.45rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header id="header">
+      <div class="logo">
+        <span class="f1-badge">F1</span>
+        <span>EXPLODED VIEW · AMR26</span>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" id="btn-theme" title="切换主题">🌓</button>
+        <button class="icon-btn" id="btn-reset" title="重置视角">🔄</button>
+        <button class="icon-btn" id="btn-help" title="帮助">?</button>
+      </div>
+    </header>
+
+    <!-- 3D Canvas -->
+    <div id="canvas-container">
+      <!-- Loading Overlay -->
+      <div id="loading-overlay">
+        <div class="spinner"></div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        <div class="loading-text" id="loading-text">加载 3D 模型中...</div>
+      </div>
+    </div>
+
+    <!-- Sidebar - Category Filters -->
+    <aside id="sidebar">
+      <div class="section-title">系统分类</div>
+    </aside>
+
+    <!-- Info Panel -->
+    <aside id="info-panel" class="hidden">
+      <div class="panel-placeholder">
+        <div class="icon">🏎️</div>
+        <div>点击赛车部件<br>查看详细技术信息</div>
+      </div>
+      <div class="panel-content">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <div class="part-category" id="info-category"></div>
+          <button class="icon-btn" id="btn-close-info" title="关闭" style="flex-shrink:0;">✕</button>
+        </div>
+        <div class="part-name" id="info-name"></div>
+        <p class="part-function" id="info-function"></p>
+        <ul class="part-specs" id="info-specs"></ul>
+      </div>
+    </aside>
+
+    <!-- Bottom Bar -->
+    <div id="bottombar">
+      <span class="slider-label">🏎️ 车型</span>
+      <select id="car-selector"></select>
+      <span class="slider-label">💥 爆炸程度</span>
+      <input type="range" id="explosion-slider" min="0" max="100" value="0" step="1">
+      <span class="slider-value" id="slider-value">0%</span>
+      <span class="hint">🖱 拖拽=旋转 | 滚轮=缩放 | 右键=平移 | R=重置</span>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast"></div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+    // ===== Constants =====
+    const CATEGORIES = [
+      { id: 'chassis',    label: 'Chassis',        labelZh: '底盘/车身',   color: '#f39c12', shortcut: '1' },
+      { id: 'powerunit',  label: 'Power Unit',     labelZh: '动力单元',     color: '#e74c3c', shortcut: '2' },
+      { id: 'aero',       label: 'Aerodynamics',   labelZh: '空气动力学',   color: '#3498db', shortcut: '3' },
+      { id: 'cockpit',    label: 'Cockpit',        labelZh: '座舱',         color: '#e67e22', shortcut: '4' },
+      { id: 'wheels',     label: 'Wheels & Tyres', labelZh: '车轮轮胎',     color: '#95a5a6', shortcut: '5' },
+      { id: 'elec',       label: 'Electronics',    labelZh: '电子/灯光',    color: '#9b59b6', shortcut: '6' },
+      { id: 'suspension', label: 'Suspension',     labelZh: '悬挂/刹车',    color: '#2ecc71', shortcut: '7' },
+      { id: 'cooling',    label: 'Cooling',        labelZh: '冷却系统',     color: '#1abc9c', shortcut: '8' },
+    ];
+
+    const CAT_COLORS = {};
+    CATEGORIES.forEach(c => { CAT_COLORS[c.id] = c.color; });
+
+    // ===== 🏎️ 车辆注册表 =====
+    const CARS = [
+      {
+        id: 'amr26',
+        name: 'Aston Martin AMR26',
+        year: '2026',
+        team: 'Aston Martin Aramco F1',
+        modelPath: 'model/scene.gltf',
+        cameraPos: [3.5, 2.0, 5.5],
+        cameraTarget: [0, 0.2, 0.5],
+        objectNames: {},  // filled below
+        namedMeshInfo: {}, // filled below
+      },
+      // 未来可在此添加更多车型
+    ];
+
+    // 当前选中的车型（变量在对象定义后赋值）
+    let currentCar = CARS[0];
+    let OBJECT_NAMES;
+    let NAMED_MESH_INFO;
+
+    // ===== Object_# → 中文名称映射 (基于glTF节点层级分析) =====
+    CARS[0].objectNames = {
+      // ── 后视镜 ──
+      'Object_0':  { zh: '右后视镜外壳',   cat: 'aero' },
+      'Object_42': { zh: '左后视镜总成',   cat: 'aero' },
+      'Object_48': { zh: '后视镜支架',     cat: 'aero' },
+      'Object_67': { zh: '后视镜镜片',     cat: 'aero' },
+      'Object_165':{ zh: '右后视镜总成',   cat: 'aero' },
+
+      // ── 左前悬挂/刹车 ──
+      'Object_1':  { zh: '左前刹车碟',     cat: 'wheels' },
+      'Object_2':  { zh: '左前刹车碟(内)', cat: 'wheels' },
+      'Object_3':  { zh: '左前卡钳',       cat: 'wheels' },
+      'Object_4':  { zh: '左前卡钳支架',   cat: 'wheels' },
+      'Object_5':  { zh: '左前轮毂',       cat: 'wheels' },
+      'Object_6':  { zh: '左前转向拉杆',   cat: 'suspension' },
+      'Object_7':  { zh: '左前转向节',     cat: 'suspension' },
+      'Object_8':  { zh: '左前推杆',       cat: 'suspension' },
+      'Object_9':  { zh: '左前悬挂连杆',   cat: 'suspension' },
+      'Object_40': { zh: '左前下叉臂',     cat: 'suspension' },
+      'Object_41': { zh: '左前下叉臂(内)', cat: 'suspension' },
+      'Object_163':{ zh: '左前上叉臂',     cat: 'suspension' },
+      'Object_164':{ zh: '左前上叉臂(内)', cat: 'suspension' },
+
+      // ── 右前悬挂/刹车 ──
+      'Object_14': { zh: '右前上叉臂',     cat: 'suspension' },
+      'Object_15': { zh: '右前上叉臂(内)', cat: 'suspension' },
+      'Object_17': { zh: '右前下叉臂',     cat: 'suspension' },
+      'Object_18': { zh: '右前下叉臂(内)', cat: 'suspension' },
+      'Object_53': { zh: '右前推杆',       cat: 'suspension' },
+      'Object_54': { zh: '右前悬挂连杆',   cat: 'suspension' },
+      'Object_168':{ zh: '右前刹车碟',     cat: 'wheels' },
+      'Object_169':{ zh: '右前刹车碟(内)', cat: 'wheels' },
+      'Object_170':{ zh: '右前卡钳',       cat: 'wheels' },
+      'Object_171':{ zh: '右前卡钳支架',   cat: 'wheels' },
+      'Object_172':{ zh: '右前轮毂',       cat: 'wheels' },
+      'Object_173':{ zh: '右前转向拉杆',   cat: 'suspension' },
+      'Object_174':{ zh: '右前转向节',     cat: 'suspension' },
+
+      // ── 左后悬挂/刹车 ──
+      'Object_43': { zh: '左后刹车碟',     cat: 'wheels' },
+      'Object_44': { zh: '左后刹车碟(内)', cat: 'wheels' },
+      'Object_45': { zh: '左后卡钳与轮毂', cat: 'wheels' },
+
+      // ── 右后悬挂/刹车 ──
+      'Object_152':{ zh: '右后刹车碟',     cat: 'wheels' },
+      'Object_153':{ zh: '右后刹车碟(内)', cat: 'wheels' },
+      'Object_154':{ zh: '右后卡钳与轮毂', cat: 'wheels' },
+
+      // ── 后悬挂组件 ──
+      'Object_23': { zh: '后悬挂臂A',      cat: 'suspension' },
+      'Object_24': { zh: '后悬挂臂B',      cat: 'suspension' },
+      'Object_25': { zh: '后悬挂臂C',      cat: 'suspension' },
+      'Object_26': { zh: '后悬挂臂D',      cat: 'suspension' },
+      'Object_27': { zh: '后悬挂主臂',     cat: 'suspension' },
+      'Object_28': { zh: '后悬挂拉索',     cat: 'suspension' },
+      'Object_55': { zh: '后悬挂臂E',      cat: 'suspension' },
+      'Object_56': { zh: '后悬挂臂F',      cat: 'suspension' },
+      'Object_57': { zh: '后悬挂臂G',      cat: 'suspension' },
+      'Object_58': { zh: '后悬挂臂H',      cat: 'suspension' },
+      'Object_59': { zh: '后悬挂主臂(右)', cat: 'suspension' },
+      'Object_60': { zh: '后悬挂拉索(右)', cat: 'suspension' },
+
+      // ── 轮胎 (4条) ──
+      'Object_20': { zh: '右前轮胎(侧壁)', cat: 'wheels' },
+      'Object_21': { zh: '右前轮胎(胎面)', cat: 'wheels' },
+      'Object_31': { zh: '左前轮胎(侧壁)', cat: 'wheels' },
+      'Object_32': { zh: '左前轮胎(胎面)', cat: 'wheels' },
+      'Object_50': { zh: '右后轮胎(侧壁)', cat: 'wheels' },
+      'Object_51': { zh: '右后轮胎(胎面)', cat: 'wheels' },
+      'Object_64': { zh: '左后轮胎(侧壁)', cat: 'wheels' },
+      'Object_65': { zh: '左后轮胎(胎面)', cat: 'wheels' },
+
+      // ── 轮辋 (4个) ──
+      'Object_22': { zh: '右前轮辋',       cat: 'wheels' },
+      'Object_33': { zh: '左前轮辋',       cat: 'wheels' },
+      'Object_52': { zh: '右后轮辋',       cat: 'wheels' },
+      'Object_66': { zh: '左后轮辋',       cat: 'wheels' },
+
+      // ── 座舱 ──
+      'Object_16': { zh: '座舱黑色内衬',   cat: 'cockpit' },
+      'Object_19': { zh: '座舱主体结构',   cat: 'cockpit' },
+      'Object_30': { zh: '座舱金属加强件', cat: 'cockpit' },
+      'Object_34': { zh: '座舱外壳',       cat: 'cockpit' },
+      'Object_63': { zh: '座舱防火泡棉',   cat: 'cockpit' },
+      'Object_149':{ zh: '安全单体壳',     cat: 'chassis' },
+      'Object_150':{ zh: '车手头枕',       cat: 'cockpit' },
+      'Object_162':{ zh: '安全单体壳(内层)', cat: 'chassis' },
+
+      // ── 安全带 (两组状态) ──
+      'Object_156':{ zh: '安全带肩带A',    cat: 'cockpit' },
+      'Object_157':{ zh: '安全带肩带B',    cat: 'cockpit' },
+      'Object_158':{ zh: '安全带腰带A',    cat: 'cockpit' },
+      'Object_159':{ zh: '安全带腰带B',    cat: 'cockpit' },
+      'Object_160':{ zh: '安全带胯带A',    cat: 'cockpit' },
+      'Object_161':{ zh: '安全带胯带B',    cat: 'cockpit' },
+      'Object_166':{ zh: '安全带(扣紧)A',  cat: 'cockpit' },
+      'Object_167':{ zh: '安全带(扣紧)B',  cat: 'cockpit' },
+
+      // ── 挡风玻璃 ──
+      'Object_68': { zh: '挡风玻璃(正面)', cat: 'cockpit' },
+      'Object_155':{ zh: '挡风玻璃(侧面)', cat: 'cockpit' },
+
+      // ── 方向盘总成 (STEER_HR) ──
+      'Object_69': { zh: '方向盘LED(蓝)',  cat: 'elec' },
+      'Object_70': { zh: '方向盘KERS灯0',  cat: 'elec' },
+      'Object_71': { zh: '方向盘KERS灯1',  cat: 'elec' },
+      'Object_72': { zh: '方向盘KERS灯2',  cat: 'elec' },
+      'Object_73': { zh: '方向盘KERS灯3',  cat: 'elec' },
+      'Object_74': { zh: '方向盘KERS灯4',  cat: 'elec' },
+      'Object_75': { zh: '方向盘KERS灯5',  cat: 'elec' },
+      'Object_76': { zh: '方向盘KERS灯6',  cat: 'elec' },
+      'Object_77': { zh: '方向盘KERS灯7',  cat: 'elec' },
+      'Object_78': { zh: '方向盘KERS灯8',  cat: 'elec' },
+      'Object_79': { zh: '方向盘KERS灯9',  cat: 'elec' },
+      'Object_80': { zh: '方向盘KERS灯10', cat: 'elec' },
+      'Object_81': { zh: '方向盘KERS灯11', cat: 'elec' },
+      'Object_82': { zh: '方向盘KERS灯12', cat: 'elec' },
+      'Object_83': { zh: '方向盘KERS灯13', cat: 'elec' },
+      'Object_84': { zh: '方向盘KERS灯14', cat: 'elec' },
+      'Object_85': { zh: '方向盘KERS灯15', cat: 'elec' },
+      'Object_86': { zh: '方向盘KERS灯16', cat: 'elec' },
+      'Object_87': { zh: '方向盘KERS灯17', cat: 'elec' },
+      'Object_88': { zh: '方向盘KERS灯18', cat: 'elec' },
+      'Object_89': { zh: '方向盘KERS灯19', cat: 'elec' },
+      'Object_90': { zh: '方向盘KERS灯20', cat: 'elec' },
+      'Object_91': { zh: '方向盘KERS灯21', cat: 'elec' },
+      'Object_92': { zh: '方向盘KERS灯22', cat: 'elec' },
+      'Object_93': { zh: '方向盘KERS灯23', cat: 'elec' },
+      'Object_94': { zh: '方向盘KERS灯24', cat: 'elec' },
+      'Object_95': { zh: '方向盘KERS灯25', cat: 'elec' },
+      'Object_96': { zh: '方向盘KERS灯26', cat: 'elec' },
+      'Object_97': { zh: '方向盘KERS灯27', cat: 'elec' },
+      'Object_98': { zh: '方向盘KERS灯28', cat: 'elec' },
+      'Object_99': { zh: '方向盘KERS灯29', cat: 'elec' },
+      'Object_100':{ zh: '方向盘KERS灯30', cat: 'elec' },
+      'Object_101':{ zh: '方向盘KERS灯31', cat: 'elec' },
+      'Object_102':{ zh: '方向盘KERS灯32', cat: 'elec' },
+      'Object_103':{ zh: '方向盘KERS灯33', cat: 'elec' },
+      'Object_104':{ zh: '方向盘KERS灯34', cat: 'elec' },
+      'Object_105':{ zh: '方向盘KERS灯35', cat: 'elec' },
+      'Object_106':{ zh: '方向盘KERS灯36', cat: 'elec' },
+      'Object_107':{ zh: '方向盘KERS灯37', cat: 'elec' },
+      'Object_108':{ zh: '方向盘KERS灯38', cat: 'elec' },
+      'Object_109':{ zh: '方向盘KERS灯39', cat: 'elec' },
+      'Object_110':{ zh: '方向盘KERS灯40', cat: 'elec' },
+      'Object_111':{ zh: '方向盘KERS灯41', cat: 'elec' },
+      'Object_112':{ zh: '方向盘KERS灯42', cat: 'elec' },
+      'Object_113':{ zh: '方向盘KERS灯43', cat: 'elec' },
+      'Object_114':{ zh: '方向盘KERS灯44', cat: 'elec' },
+      'Object_115':{ zh: '方向盘KERS灯45', cat: 'elec' },
+      'Object_116':{ zh: '方向盘KERS灯46', cat: 'elec' },
+      'Object_117':{ zh: '方向盘KERS灯47', cat: 'elec' },
+      'Object_118':{ zh: '方向盘KERS灯48', cat: 'elec' },
+      'Object_119':{ zh: '方向盘KERS灯49', cat: 'elec' },
+      'Object_120':{ zh: '方向盘KERS灯50', cat: 'elec' },
+      'Object_121':{ zh: '方向盘KERS灯51', cat: 'elec' },
+      'Object_122':{ zh: '方向盘KERS灯52', cat: 'elec' },
+      'Object_123':{ zh: '方向盘KERS灯53', cat: 'elec' },
+      'Object_124':{ zh: '方向盘KERS灯54', cat: 'elec' },
+      'Object_125':{ zh: '方向盘KERS灯55', cat: 'elec' },
+      'Object_126':{ zh: '方向盘KERS灯56', cat: 'elec' },
+      'Object_127':{ zh: '方向盘KERS灯57', cat: 'elec' },
+      'Object_128':{ zh: '方向盘LED(红)',  cat: 'elec' },
+      'Object_129':{ zh: '方向盘LED(黄)',  cat: 'elec' },
+      'Object_130':{ zh: '方向盘LCD屏幕',  cat: 'elec' },
+      'Object_131':{ zh: '方向盘主体',     cat: 'elec' },
+      'Object_132':{ zh: '方向盘面板A',    cat: 'elec' },
+      'Object_133':{ zh: '方向盘面板B',    cat: 'elec' },
+      'Object_134':{ zh: '方向盘面板C',    cat: 'elec' },
+      'Object_135':{ zh: '方向盘面板D',    cat: 'elec' },
+      'Object_136':{ zh: '方向盘面板E',    cat: 'elec' },
+      'Object_137':{ zh: '方向盘面板F',    cat: 'elec' },
+      'Object_138':{ zh: '方向盘标签A',    cat: 'elec' },
+      'Object_139':{ zh: '方向盘标签B',    cat: 'elec' },
+      'Object_140':{ zh: '方向盘标签C',    cat: 'elec' },
+      'Object_141':{ zh: '方向盘标签D',    cat: 'elec' },
+      'Object_142':{ zh: '方向盘标签E',    cat: 'elec' },
+      'Object_143':{ zh: '方向盘标签F',    cat: 'elec' },
+      'Object_144':{ zh: 'DRS状态灯',      cat: 'elec' },
+      'Object_145':{ zh: 'DRS预亮指示灯',  cat: 'elec' },
+      'Object_146':{ zh: '方向盘未用标签', cat: 'elec' },
+
+      // ── 灯光系统 ──
+      'Object_35': { zh: '雨天信号灯(前)', cat: 'elec' },
+      'Object_36': { zh: '雨天信号灯(后)', cat: 'elec' },
+      'Object_148':{ zh: '雨天信号灯(侧)', cat: 'elec' },
+
+      // ── 车身面板/空力 ──
+      'Object_10': { zh: '底板前段',       cat: 'aero' },
+      'Object_11': { zh: '尾翼DRS活动襟翼',cat: 'aero' },
+      'Object_12': { zh: '车身框架A',      cat: 'chassis' },
+      'Object_13': { zh: '车身框架B',      cat: 'chassis' },
+      'Object_29': { zh: '车身连接件',     cat: 'chassis' },
+      'Object_37': { zh: '引擎盖面板',     cat: 'chassis' },
+      'Object_38': { zh: '尾翼端板(左)',   cat: 'aero' },
+      'Object_39': { zh: '尾翼端板(右)',   cat: 'aero' },
+      'Object_46': { zh: '侧箱盖板',       cat: 'chassis' },
+      'Object_47': { zh: '赞助商贴花层',   cat: 'chassis' },
+      'Object_49': { zh: '车身加强筋',     cat: 'chassis' },
+      'Object_61': { zh: '底板后段',       cat: 'aero' },
+      'Object_62': { zh: '扩散器面板',     cat: 'aero' },
+      'Object_147':{ zh: '前翼端板',       cat: 'aero' },
+      'Object_151':{ zh: '侧箱导流板',     cat: 'aero' },
+    };
+
+    // 未在表中列出的 Object_# 默认归入 chassis
+    function resolveObjectName(name) {
+      const info = OBJECT_NAMES[name];
+      if (info) return { zh: info.zh, category: info.cat };
+      // 未知 Object_ → 尝试推断
+      if (/^Object_\d+$/.test(name)) {
+        return { zh: '车身零件(' + name + ')', category: 'chassis' };
+      }
+      return null;
+    }
+
+    // ===== 命名 Mesh → 中文名称映射 =====
+    CARS[0].namedMeshInfo = {
+      chasis:             { zh: '底盘主体',       cat: 'chassis' },
+      chassis2:           { zh: '底盘上部结构',   cat: 'chassis' },
+      carbon:             { zh: '碳纤维引擎盖',   cat: 'chassis' },
+      generics:           { zh: '通用结构件',     cat: 'chassis' },
+      NEGRO:              { zh: '黑色车身面板',   cat: 'chassis' },
+      BLACK:              { zh: '黑色装饰件',     cat: 'chassis' },
+      chrome:             { zh: '镀铬装饰条',     cat: 'chassis' },
+      redbull_detail:     { zh: '车身细节部件',   cat: 'chassis' },
+      decal:              { zh: '车队涂装贴花',   cat: 'chassis' },
+
+      TIRE_SIDES:         { zh: '轮胎侧壁',       cat: 'wheels' },
+      TIRE_TREAD:         { zh: '轮胎胎面',       cat: 'wheels' },
+      discs:              { zh: '碳纤维刹车碟',   cat: 'wheels' },
+      redbull_wheel_hub:  { zh: '镁合金轮毂',     cat: 'wheels' },
+
+      cockpit:            { zh: '座舱壳体',       cat: 'cockpit' },
+      cockpit_black_s:    { zh: '座舱黑色内衬',   cat: 'cockpit' },
+      cockpit_metal:      { zh: '座舱金属框架',   cat: 'cockpit' },
+      cockpit_foam:       { zh: '座舱防火泡棉',   cat: 'cockpit' },
+      gp21_cinture:       { zh: '六点式安全带',   cat: 'cockpit' },
+      glass:              { zh: '挡风玻璃',       cat: 'cockpit' },
+
+      rtt_light:          { zh: '前信号灯组',     cat: 'elec' },
+      rear_light:         { zh: 'LED尾灯',        cat: 'elec' },
+      'CLEARLED.002':     { zh: 'LED指示灯组A',   cat: 'elec' },
+      'CLEARLED_PRE.001': { zh: 'LED指示灯组B',   cat: 'elec' },
+      gp21_LCD:           { zh: 'LCD多功能显示屏',cat: 'elec' },
+      rtt_sw_qr:          { zh: '方向盘快拆机构', cat: 'elec' },
+      rtt_sw_buttons:     { zh: '方向盘控制按钮', cat: 'elec' },
+      rtt_sw_chrome:      { zh: '方向盘换挡拨片', cat: 'elec' },
+      rtt_sw_handles:     { zh: '方向盘握把',     cat: 'elec' },
+      sw_plastic_black:   { zh: '方向盘外壳',     cat: 'elec' },
+      TAG_DRS_ON:         { zh: 'DRS激活指示灯',  cat: 'elec' },
+
+      kers_orange:        { zh: 'KERS高压警示标', cat: 'powerunit' },
+      kers_green:         { zh: 'KERS安全标识',   cat: 'powerunit' },
+
+      mirrors:            { zh: '空气动力学后视镜',cat: 'aero' },
+    };
+
+    // 将引用指向当前车型
+    OBJECT_NAMES = CARS[0].objectNames;
+    NAMED_MESH_INFO = CARS[0].namedMeshInfo;
+
+    // ===== SceneManager =====
+    class SceneManager {
+      constructor(container) {
+        this.container = container;
+        this.renderer = null;
+        this.scene = null;
+        this.camera = null;
+        this.controls = null;
+      }
+
+      init() {
+        const w = this.container.clientWidth;
+        const h = this.container.clientHeight;
+
+        this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        this.renderer.setSize(w, h);
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        this.renderer.shadowMap.enabled = true;
+        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        this.renderer.toneMappingExposure = 1.1;
+        this.container.appendChild(this.renderer.domElement);
+
+        this.scene = new THREE.Scene();
+        this.scene.background = new THREE.Color('#1a1a1a');
+        this.scene.fog = new THREE.Fog('#1a1a1a', 8, 30);
+
+        this.camera = new THREE.PerspectiveCamera(40, w / h, 0.1, 100);
+        this.camera.position.set(3.5, 2.0, 5.5);
+        this.camera.lookAt(0, 0.2, 0.5);
+
+        // Lights
+        const ambient = new THREE.AmbientLight('#8899bb', 0.7);
+        this.scene.add(ambient);
+
+        const hemi = new THREE.HemisphereLight('#b1c8e0', '#333333', 0.5);
+        this.scene.add(hemi);
+
+        const keyLight = new THREE.DirectionalLight('#ffffff', 3.0);
+        keyLight.position.set(5, 8, 4);
+        keyLight.castShadow = true;
+        keyLight.shadow.mapSize.width = 2048;
+        keyLight.shadow.mapSize.height = 2048;
+        keyLight.shadow.camera.near = 0.5;
+        keyLight.shadow.camera.far = 50;
+        keyLight.shadow.camera.left = -10;
+        keyLight.shadow.camera.right = 10;
+        keyLight.shadow.camera.top = 10;
+        keyLight.shadow.camera.bottom = -10;
+        keyLight.shadow.bias = -0.0001;
+        this.scene.add(keyLight);
+
+        const fillLight = new THREE.DirectionalLight('#8899cc', 0.8);
+        fillLight.position.set(-3, 2, -2);
+        this.scene.add(fillLight);
+
+        const rimLight = new THREE.DirectionalLight('#ffffff', 1.2);
+        rimLight.position.set(0, 1, -4);
+        this.scene.add(rimLight);
+
+        // Ground plane
+        const groundGeo = new THREE.PlaneGeometry(20, 20);
+        const groundMat = new THREE.MeshStandardMaterial({ color: '#222222', roughness: 0.7, metalness: 0.1 });
+        const ground = new THREE.Mesh(groundGeo, groundMat);
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.y = -1.5;
+        ground.receiveShadow = true;
+        this.scene.add(ground);
+
+        // Grid
+        const gridHelper = new THREE.PolarGridHelper(8, 48, 24, 64, '#444444', '#333333');
+        gridHelper.position.y = -1.49;
+        this.scene.add(gridHelper);
+
+        // OrbitControls
+        this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+        this.controls.target.set(0, 0.2, 0.5);
+        this.controls.enableDamping = true;
+        this.controls.dampingFactor = 0.08;
+        this.controls.minDistance = 1.5;
+        this.controls.maxDistance = 12;
+        this.controls.maxPolarAngle = Math.PI * 0.7;
+        this.controls.minPolarAngle = 0.2;
+        this.controls.update();
+
+        this.defaultCameraPos = this.camera.position.clone();
+        this.defaultTarget = new THREE.Vector3(0, 0.2, 0.5);
+
+        this._cameraAnimTarget = null;
+        this._cameraAnimStart = null;
+        this._cameraAnimTime = 0;
+        this._cameraAnimDuration = 0.8;
+      }
+
+      resize() {
+        const w = this.container.clientWidth;
+        const h = this.container.clientHeight;
+        this.renderer.setSize(w, h);
+        this.camera.aspect = w / h;
+        this.camera.updateProjectionMatrix();
+      }
+
+      resetCamera(animate = true) {
+        if (animate) {
+          this._cameraAnimTarget = { pos: this.defaultCameraPos.clone(), target: this.defaultTarget.clone() };
+          this._cameraAnimStart = {
+            pos: this.camera.position.clone(),
+            target: this.controls.target.clone(),
+          };
+          this._cameraAnimTime = 0;
+          this._cameraAnimDuration = 0.8;
+        } else {
+          this.camera.position.copy(this.defaultCameraPos);
+          this.controls.target.copy(this.defaultTarget);
+          this.controls.update();
+        }
+      }
+
+      updateCameraAnim(delta) {
+        if (!this._cameraAnimTarget) return false;
+        this._cameraAnimTime += delta;
+        const t = Math.min(this._cameraAnimTime / this._cameraAnimDuration, 1.0);
+        const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+        this.camera.position.lerpVectors(this._cameraAnimStart.pos, this._cameraAnimTarget.pos, ease);
+        this.controls.target.lerpVectors(this._cameraAnimStart.target, this._cameraAnimTarget.target, ease);
+        if (t >= 1.0) {
+          this._cameraAnimTarget = null;
+          return false;
+        }
+        return true;
+      }
+
+      updateTheme(isDark) {
+        const bgColor = isDark ? '#1a1a1a' : '#e8ecf0';
+        const fogColor = isDark ? '#1a1a1a' : '#e8ecf0';
+        this.scene.background = new THREE.Color(bgColor);
+        this.scene.fog = new THREE.Fog(fogColor, 8, 30);
+      }
+    }
+
+    // ===== Model Loader & Part Extractor =====
+    class ModelPartExtractor {
+      constructor(scene) {
+        this.scene = scene;
+        this.pivotGroup = new THREE.Group(); // root for all extracted pivots
+        this.scene.add(this.pivotGroup);
+        this.parts = []; // { id, meshName, category, pivot, center, direction, maxDist, assembledPos, explodedPos }
+        this.modelCenter = new THREE.Vector3();
+      }
+
+      async loadAndExtract(gltfPath, onProgress) {
+        const loader = new GLTFLoader();
+        const gltf = await loader.loadAsync(gltfPath, (e) => {
+          if (onProgress && e.total) onProgress(e.loaded / e.total);
+        });
+        const model = gltf.scene;
+
+        // Update world matrices after loading
+        model.updateWorldMatrix(true, true);
+
+        // Compute global model bounding box
+        const bbox = new THREE.Box3().expandByObject(model);
+        bbox.getCenter(this.modelCenter);
+
+        console.log('Model center:', this.modelCenter.toArray());
+        console.log('Model size:', bbox.getSize(new THREE.Vector3()).toArray());
+
+        // Collect all meshes with their FULL world transforms
+        const meshes = [];
+        model.traverse((child) => {
+          if (child.isMesh && child.name) {
+            const wp = new THREE.Vector3();
+            const wq = new THREE.Quaternion();
+            const ws = new THREE.Vector3();
+            child.matrixWorld.decompose(wp, wq, ws);
+
+            // Resolve Chinese name
+            let zhName, category;
+            const objInfo = resolveObjectName(child.name);
+            if (objInfo) {
+              zhName = objInfo.zh;
+              category = objInfo.category;
+            } else {
+              const namedInfo = NAMED_MESH_INFO[child.name];
+              if (namedInfo) {
+                zhName = namedInfo.zh;
+                category = namedInfo.cat;
+              } else {
+                // Fallback for any other named meshes
+                zhName = child.name.replace(/_/g, ' ');
+                category = 'chassis';
+              }
+            }
+
+            meshes.push({
+              mesh: child,
+              name: child.name,
+              zhName: zhName,
+              category: category,
+              worldPos: wp.clone(),
+              worldQuat: wq.clone(),
+              worldScale: ws.clone(),
+            });
+          }
+        });
+
+        console.log(`Found ${meshes.length} named meshes`);
+
+        // Group meshes by Chinese name (multiple meshes may share the same name)
+        const groups = new Map(); // zhName → { meshes[], category }
+        const catParts = {};      // category → count
+
+        for (const m of meshes) {
+          if (!groups.has(m.zhName)) {
+            groups.set(m.zhName, { meshes: [], category: m.category });
+            catParts[m.category] = (catParts[m.category] || 0) + 1;
+          }
+          groups.get(m.zhName).meshes.push(m);
+        }
+
+        console.log(`Grouped into ${groups.size} parts across ${Object.keys(catParts).length} categories`);
+        console.log('Parts per category:', catParts);
+
+        // Create pivot groups for each mesh-name group
+        let idx = 0;
+        groups.forEach((group, zhName) => {
+          if (group.meshes.length === 0) return;
+
+          // Compute group center (average of all mesh world positions)
+          const center = new THREE.Vector3();
+          group.meshes.forEach(m => center.add(m.worldPos));
+          center.divideScalar(group.meshes.length);
+
+          // Create pivot group at the group center
+          const pivot = new THREE.Group();
+          pivot.position.copy(center);
+
+          // Clone each mesh with correct world transform relative to pivot
+          for (const m of group.meshes) {
+            const clone = m.mesh.clone();
+
+            // Set clone's local transform to match world transform
+            clone.position.copy(m.worldPos).sub(center);
+            clone.quaternion.copy(m.worldQuat);
+            clone.scale.copy(m.worldScale);
+
+            clone.castShadow = true;
+            clone.receiveShadow = true;
+            pivot.add(clone);
+          }
+
+          // Determine explosion direction with vertical emphasis
+          const dir = center.clone().sub(this.modelCenter);
+          const dist = dir.length();
+          if (dist < 0.05) {
+            // Center parts: go upward with slight random scatter
+            dir.set((Math.random() - 0.5) * 0.3, 0.6 + Math.random() * 0.4, (Math.random() - 0.5) * 0.3);
+            dir.normalize();
+          } else {
+            dir.normalize();
+            // Amplify vertical separation: parts above center go more up, below go more down
+            const verticalOffset = (center.y - this.modelCenter.y);
+            dir.y += verticalOffset * 1.5;
+            dir.normalize();
+          }
+
+          // Larger explosion range for better visual separation
+          const maxDist = Math.max(0.5, dist * 1.6 + 0.5);
+
+          // Generate display name and description
+          const categoryZh = (CATEGORIES.find(c => c.id === group.category) || {}).labelZh || group.category;
+          const func = `${categoryZh}组件 — ${zhName}。2026赛季 Aston Martin AMR26 精密赛车部件。`;
+          const specs = ['2026 Aston Martin AMR26', 'Sketchfab高精度3D扫描模型', 'PBR物理渲染材质'];
+
+          const id = `part-${idx++}`;
+
+          const entry = {
+            id,
+            meshName: zhName,
+            category: group.category,
+            zh: zhName,
+            func: func,
+            specs: specs,
+            pivot,
+            center: center.clone(),
+            assembledPos: center.clone(),
+            direction: dir,
+            maxDist,
+            explodedPos: center.clone().addScaledVector(dir, maxDist),
+            currentFactor: 0,
+            targetFactor: 0,
+          };
+
+          this.pivotGroup.add(pivot);
+          this.parts.push(entry);
+        });
+
+        // Hide original model (we use cloned meshes in pivots)
+        model.traverse(child => {
+          if (child.isMesh) child.visible = false;
+        });
+
+        // Still add original to scene for any non-mesh objects (lights, etc.)
+        this.scene.add(model);
+
+        // Sort parts: center parts first, then by distance from center
+        this.parts.sort((a, b) => {
+          const da = a.center.distanceTo(this.modelCenter);
+          const db = b.center.distanceTo(this.modelCenter);
+          return da - db;
+        });
+
+        console.log(`Extracted ${this.parts.length} part groups`);
+
+        return this.parts;
+      }
+
+      getCategoryParts() {
+        const map = {};
+        this.parts.forEach(p => {
+          if (!map[p.category]) map[p.category] = [];
+          map[p.category].push(p);
+        });
+        return map;
+      }
+    }
+
+    // ===== ExplosionController =====
+    class ExplosionController {
+      constructor(parts) {
+        this.parts = parts;
+        this.globalFactor = 0;
+        this.categoryOverrides = {};
+        this.introPlaying = false;
+        this.introTimer = 0;
+        this.introDuration = 1.5;
+      }
+
+      startIntro() {
+        this.introPlaying = true;
+        this.introTimer = 0;
+        this.globalFactor = 0.35;
+        this._applyFactors();
+      }
+
+      setGlobalFactor(factor) {
+        this.globalFactor = factor;
+        this._applyFactors();
+      }
+
+      toggleCategory(categoryId) {
+        if (this.categoryOverrides[categoryId]) {
+          delete this.categoryOverrides[categoryId];
+        } else {
+          this.categoryOverrides[categoryId] = true;
+        }
+        this._applyFactors();
+        return !!this.categoryOverrides[categoryId];
+      }
+
+      isCategoryActive(categoryId) {
+        return !!this.categoryOverrides[categoryId];
+      }
+
+      assembleAll() {
+        this.categoryOverrides = {};
+        this.globalFactor = 0;
+        this._applyFactors();
+      }
+
+      _applyFactors() {
+        const hasOverride = Object.keys(this.categoryOverrides).length > 0;
+        this.parts.forEach(p => {
+          if (hasOverride) {
+            p.targetFactor = this.categoryOverrides[p.category] ? this.globalFactor : 0;
+          } else {
+            p.targetFactor = this.globalFactor;
+          }
+        });
+      }
+
+      update(delta) {
+        if (this.introPlaying) {
+          this.introTimer += delta;
+          if (this.introTimer >= this.introDuration) {
+            this.introPlaying = false;
+            this.globalFactor = 0;
+            this._applyFactors();
+          }
+        }
+
+        const lerpSpeed = 1 - Math.exp(-8 * delta);
+
+        this.parts.forEach(p => {
+          p.currentFactor += (p.targetFactor - p.currentFactor) * lerpSpeed;
+          p.pivot.position.lerpVectors(p.assembledPos, p.explodedPos, p.currentFactor);
+        });
+      }
+
+      getDisplayFactor() {
+        if (this.parts.length === 0) return 0;
+        let max = 0;
+        for (const p of this.parts) {
+          if (p.currentFactor > max) max = p.currentFactor;
+        }
+        return max;
+      }
+    }
+
+    // ===== InteractionManager =====
+    class InteractionManager {
+      constructor(camera, domElement, parts) {
+        this.camera = camera;
+        this.domElement = domElement;
+        this.parts = parts;
+        this.raycaster = new THREE.Raycaster();
+        this.mouse = new THREE.Vector2();
+        this.hoveredPart = null;
+        this.selectedPart = null;
+        this.allMeshes = [];
+        this.meshToPartMap = new Map();
+        this.onHover = null;
+        this.onSelect = null;
+        this._lastHoverCheck = 0;
+        this._hoverThrottle = 50;
+        this._collectMeshes();
+        this._bindEvents();
+      }
+
+      _collectMeshes() {
+        this.allMeshes = [];
+        this.meshToPartMap.clear();
+        this.parts.forEach(part => {
+          part.pivot.traverse(child => {
+            if (child.isMesh) {
+              this.allMeshes.push(child);
+              this.meshToPartMap.set(child, part);
+            }
+          });
+        });
+      }
+
+      _bindEvents() {
+        this.domElement.addEventListener('mousemove', (e) => this._onMouseMove(e), { passive: true });
+        this.domElement.addEventListener('click', (e) => this._onClick(e));
+        this.domElement.addEventListener('touchstart', (e) => {
+          if (e.touches.length === 1) {
+            this._touchStartTime = Date.now();
+            this._touchStartPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+          }
+        }, { passive: true });
+        this.domElement.addEventListener('touchend', (e) => {
+          const dt = Date.now() - (this._touchStartTime || 0);
+          const dx = Math.abs((e.changedTouches[0]?.clientX || 0) - (this._touchStartPos?.x || 0));
+          const dy = Math.abs((e.changedTouches[0]?.clientY || 0) - (this._touchStartPos?.y || 0));
+          if (dt < 300 && dx < 10 && dy < 10) {
+            this._handleClick(e.changedTouches[0]);
+          }
+        });
+      }
+
+      _updateMouse(pos) {
+        const rect = this.domElement.getBoundingClientRect();
+        this.mouse.x = ((pos.clientX - rect.left) / rect.width) * 2 - 1;
+        this.mouse.y = -((pos.clientY - rect.top) / rect.height) * 2 + 1;
+      }
+
+      _getIntersection() {
+        this.raycaster.setFromCamera(this.mouse, this.camera);
+        const intersects = this.raycaster.intersectObjects(this.allMeshes, false);
+        if (intersects.length > 0) {
+          return this.meshToPartMap.get(intersects[0].object) || null;
+        }
+        return null;
+      }
+
+      _onMouseMove(event) {
+        const now = performance.now();
+        if (now - this._lastHoverCheck < this._hoverThrottle) return;
+        this._lastHoverCheck = now;
+        this._updateMouse(event);
+        const part = this._getIntersection();
+        if (part !== this.hoveredPart) {
+          this._resetHighlight(this.hoveredPart);
+          this.hoveredPart = part;
+          this._setHoverHighlight(part);
+          if (this.onHover) this.onHover(part);
+          this.domElement.style.cursor = part ? 'pointer' : 'grab';
+        }
+      }
+
+      _onClick(event) {
+        this._updateMouse(event);
+        this._handleClick(event);
+      }
+
+      _handleClick(pos) {
+        this._updateMouse(pos);
+        const part = this._getIntersection();
+        if (part) {
+          this._selectPart(part);
+        } else {
+          this._deselectPart();
+        }
+      }
+
+      _selectPart(part) {
+        if (this.selectedPart && this.selectedPart !== part) {
+          this._resetSelectHighlight(this.selectedPart);
+        }
+        this.selectedPart = part;
+        this._setSelectHighlight(part);
+        if (this.onSelect) this.onSelect(part);
+      }
+
+      _deselectPart() {
+        if (this.selectedPart) {
+          this._resetSelectHighlight(this.selectedPart);
+          this.selectedPart = null;
+          if (this.onSelect) this.onSelect(null);
+        }
+      }
+
+      _modifyEmissive(part, color, intensity) {
+        if (!part) return;
+        part.pivot.traverse(child => {
+          if (child.isMesh && child.material) {
+            const mats = Array.isArray(child.material) ? child.material : [child.material];
+            mats.forEach(mat => {
+              if (mat.emissive) {
+                mat.emissive = new THREE.Color(color);
+                mat.emissiveIntensity = intensity;
+              }
+            });
+          }
+        });
+      }
+
+      _setHoverHighlight(part) {
+        if (part && part !== this.selectedPart) {
+          this._modifyEmissive(part, '#444444', 0.4);
+        }
+      }
+
+      _resetHighlight(part) {
+        if (part && part !== this.selectedPart) {
+          this._modifyEmissive(part, '#000000', 0);
+        }
+      }
+
+      _setSelectHighlight(part) {
+        this._modifyEmissive(part, '#ff6600', 0.7);
+      }
+
+      _resetSelectHighlight(part) {
+        this._modifyEmissive(part, '#000000', 0);
+      }
+
+      deselect() {
+        this._deselectPart();
+        if (this.hoveredPart) {
+          this._resetHighlight(this.hoveredPart);
+          this.hoveredPart = null;
+        }
+      }
+    }
+
+    // ===== Toast =====
+    class Toast {
+      constructor(el) {
+        this.el = el;
+        this.timer = null;
+      }
+      show(msg, duration = 2000) {
+        if (this.timer) clearTimeout(this.timer);
+        this.el.textContent = msg;
+        this.el.classList.add('show');
+        this.timer = setTimeout(() => {
+          this.el.classList.remove('show');
+          this.timer = null;
+        }, duration);
+      }
+    }
+
+    // ===== App =====
+    class App {
+      constructor() {
+        this.sceneManager = null;
+        this.extractor = null;
+        this.explosionController = null;
+        this.interactionManager = null;
+        this.toast = null;
+        this.selectedPartId = null;
+        this.isDark = true;
+        this.parts = [];
+
+        this.canvasContainer = document.getElementById('canvas-container');
+        this.sidebar = document.getElementById('sidebar');
+        this.infoPanel = document.getElementById('info-panel');
+        this.slider = document.getElementById('explosion-slider');
+        this.sliderValue = document.getElementById('slider-value');
+        this.toastEl = document.getElementById('toast');
+        this.loadingOverlay = document.getElementById('loading-overlay');
+        this.progressFill = document.getElementById('progress-fill');
+        this.loadingText = document.getElementById('loading-text');
+      }
+
+      async init() {
+        this.toast = new Toast(this.toastEl);
+
+        // Init 3D scene
+        this.sceneManager = new SceneManager(this.canvasContainer);
+        this.sceneManager.init();
+
+        // Load and extract model
+        this.extractor = new ModelPartExtractor(this.sceneManager.scene);
+
+        try {
+          this.parts = await this.extractor.loadAndExtract('model/scene.gltf', (pct) => {
+            const percent = Math.round(pct * 100);
+            this.progressFill.style.width = percent + '%';
+            if (percent < 40) {
+              this.loadingText.textContent = '下载模型中... ' + percent + '%';
+            } else if (percent < 70) {
+              this.loadingText.textContent = '解析贴图... ' + percent + '%';
+            } else {
+              this.loadingText.textContent = '构建部件... ' + percent + '%';
+            }
+          });
+        } catch (err) {
+          console.error('Failed to load model:', err);
+          this.loadingText.innerHTML = `
+            <div style="text-align:center;color:#e74c3c;">
+              <div style="font-size:1.2rem;margin-bottom:0.5rem;">❌ 模型加载失败</div>
+              <div style="font-size:0.75rem;margin-bottom:0.5rem;">请使用本地服务器打开此页面</div>
+              <code style="font-size:0.7rem;background:#333;padding:0.3rem 0.6rem;border-radius:4px;">
+                npx serve .   或   python -m http.server 8080
+              </code>
+              <div style="font-size:0.7rem;margin-top:0.5rem;color:#999;">然后访问 http://localhost:8080/f1.html</div>
+            </div>
+          `;
+          this.progressFill.style.width = '100%';
+          this.progressFill.style.background = '#e74c3c';
+          return;
+        }
+
+        // Hide loading overlay
+        setTimeout(() => {
+          this.loadingOverlay.classList.add('hidden');
+        }, 400);
+
+        if (this.parts.length === 0) {
+          this.loadingText.textContent = '⚠️ 未能提取到任何模型部件';
+          return;
+        }
+
+        // Init explosion controller
+        this.explosionController = new ExplosionController(this.parts);
+
+        // Init interaction
+        this.interactionManager = new InteractionManager(
+          this.sceneManager.camera,
+          this.sceneManager.renderer.domElement,
+          this.parts
+        );
+
+        this.interactionManager.onSelect = (part) => {
+          if (part) {
+            this.selectPart(part.id);
+          } else {
+            this.deselectPart();
+          }
+        };
+
+        // Build category buttons
+        this.buildCategoryButtons();
+
+        // Bind events
+        this.bindEvents();
+
+        // Start animation
+        this.clock = new THREE.Clock();
+        this.animate();
+
+        // Intro animation
+        setTimeout(() => {
+          this.explosionController.startIntro();
+          this.slider.value = 35;
+          this.sliderValue.textContent = '35%';
+          this.toast.show('🏎️ 2026 Aston Martin AMR26 · 点击部件查看详情', 5000);
+        }, 600);
+
+        this.toast.show('🏎️ 拖拽旋转 | 滚轮缩放 | 右键平移 | 点击部件查看详情', 4000);
+      }
+
+      buildCategoryButtons() {
+        // Get category part counts
+        const catMap = this.extractor.getCategoryParts();
+
+        this.sidebar.innerHTML = '<div class="section-title">系统分类</div>';
+        CATEGORIES.forEach(cat => {
+          const count = (catMap[cat.id] || []).length;
+          if (count === 0) return; // Skip empty categories
+
+          const btn = document.createElement('button');
+          btn.className = 'cat-btn';
+          btn.dataset.category = cat.id;
+          btn.style.setProperty('--cat-color', cat.color);
+          btn.innerHTML = `
+            <span class="dot" style="background:${cat.color}"></span>
+            <span>${cat.labelZh}</span>
+            <span class="part-count">${count}</span>
+          `;
+          btn.addEventListener('click', () => this.toggleCategory(cat.id, btn));
+          this.sidebar.appendChild(btn);
+        });
+      }
+
+      toggleCategory(categoryId, btn) {
+        const isActive = this.explosionController.toggleCategory(categoryId);
+        if (isActive) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+        const cat = CATEGORIES.find(c => c.id === categoryId);
+        this.toast.show(`${isActive ? '💥 爆炸:' : '🔧 组装:'} ${cat ? cat.labelZh : categoryId}`);
+      }
+
+      bindEvents() {
+        window.addEventListener('resize', () => this.sceneManager.resize());
+
+        document.getElementById('btn-theme').addEventListener('click', () => this.toggleTheme());
+        document.getElementById('btn-reset').addEventListener('click', () => {
+          this.sceneManager.resetCamera(true);
+          this.toast.show('🔄 视角已重置');
+        });
+        document.getElementById('btn-help').addEventListener('click', () => {
+          this.toast.show('🖱 拖拽=旋转 | 滚轮=缩放 | 右键=平移 | R=重置 | 0-8=快捷键 | Esc=取消选中', 5000);
+        });
+        document.getElementById('btn-close-info').addEventListener('click', () => {
+          this.deselectPart();
+        });
+
+        this.slider.addEventListener('input', () => {
+          const val = parseInt(this.slider.value);
+          this.sliderValue.textContent = val + '%';
+          this.explosionController.setGlobalFactor(val / 100);
+        });
+
+        window.addEventListener('keydown', (e) => {
+          if (e.target.tagName === 'INPUT') return;
+          switch (e.key.toLowerCase()) {
+            case 'r':
+              this.sceneManager.resetCamera(true);
+              this.toast.show('🔄 视角已重置');
+              break;
+            case 'escape':
+              this.deselectPart();
+              break;
+            case '0':
+              this.slider.value = 0;
+              this.sliderValue.textContent = '0%';
+              this.explosionController.assembleAll();
+              this.sidebar.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+              this.toast.show('🔧 全部组装');
+              break;
+            default:
+              const cat = CATEGORIES.find(c => c.shortcut === e.key);
+              if (cat) {
+                const btn = this.sidebar.querySelector(`[data-category="${cat.id}"]`);
+                if (btn) this.toggleCategory(cat.id, btn);
+              }
+              break;
+          }
+        });
+
+        // Mobile swipe
+        let touchStartY = 0;
+        this.infoPanel.addEventListener('touchstart', (e) => {
+          touchStartY = e.touches[0].clientY;
+        }, { passive: true });
+        this.infoPanel.addEventListener('touchmove', (e) => {
+          if (e.touches[0].clientY - touchStartY > 50) {
+            this.deselectPart();
+          }
+        }, { passive: true });
+      }
+
+      toggleTheme() {
+        this.isDark = !this.isDark;
+        document.documentElement.setAttribute('data-theme', this.isDark ? '' : 'light');
+        this.sceneManager.updateTheme(this.isDark);
+        localStorage.setItem('f1-state', JSON.stringify({ theme: this.isDark ? 'dark' : 'light' }));
+      }
+
+      selectPart(partId) {
+        if (this.selectedPartId === partId) return;
+        this.selectedPartId = partId;
+        const part = this.parts.find(p => p.id === partId);
+        if (!part) return;
+
+        const catInfo = CATEGORIES.find(c => c.id === part.category);
+        document.getElementById('info-category').textContent = catInfo ? catInfo.labelZh : part.category;
+        document.getElementById('info-category').style.setProperty('--cat-color', CAT_COLORS[part.category] || '#999');
+        document.getElementById('info-category').style.background = CAT_COLORS[part.category] || '#999';
+        document.getElementById('info-name').textContent = part.zh || part.meshName;
+        document.getElementById('info-function').textContent = part.func || '';
+        const specsList = document.getElementById('info-specs');
+        specsList.innerHTML = (part.specs || []).map(s => `<li>${s}</li>`).join('');
+
+        this.infoPanel.classList.add('has-selection');
+        this.infoPanel.classList.remove('hidden');
+
+        if (window.innerWidth <= 860) {
+          this.infoPanel.classList.add('sheet-open');
+        }
+
+        this.toast.show(`已选择: ${part.zh || part.meshName}`);
+      }
+
+      deselectPart() {
+        if (this.interactionManager) this.interactionManager.deselect();
+        this.selectedPartId = null;
+        this.infoPanel.classList.remove('has-selection');
+        this.infoPanel.classList.add('hidden');
+        if (window.innerWidth <= 860) {
+          this.infoPanel.classList.remove('sheet-open');
+        }
+      }
+
+      animate() {
+        requestAnimationFrame(() => this.animate());
+        const delta = Math.min(this.clock.getDelta(), 0.1);
+
+        this.explosionController.update(delta);
+
+        if (this.explosionController.introPlaying) {
+          const displayVal = Math.round(this.explosionController.getDisplayFactor() * 100);
+          this.slider.value = displayVal;
+          this.sliderValue.textContent = displayVal + '%';
+          this._introWasPlaying = true;
+        } else if (this._introWasPlaying) {
+          this.slider.value = 0;
+          this.sliderValue.textContent = '0%';
+          this._introWasPlaying = false;
+        }
+
+        this.sceneManager.updateCameraAnim(delta);
+        this.sceneManager.controls.update();
+        this.sceneManager.renderer.render(this.sceneManager.scene, this.sceneManager.camera);
+      }
+    }
+
+    // ===== Bootstrap =====
+    const app = new App();
+    app.init();
+
+    console.log('🏎️  F1 Exploded View - 2026 Aston Martin AMR26');
+    console.log('   glTF Model Loader ✓');
+    console.log('   Part Extraction ✓');
+    console.log('   Explosion Controller ✓');
+    console.log('   Interaction Manager ✓');
+  </script>
+</body>
+</html>
