@@ -1844,6 +1844,7 @@
       }
 
       toggleCategory(categoryId, btn) {
+        if (!this.explosionController) return;
         const isActive = this.explosionController.toggleCategory(categoryId);
         if (isActive) {
           btn.classList.add('active');
@@ -1960,17 +1961,19 @@
         requestAnimationFrame(() => this.animate());
         const delta = Math.min(this.clock.getDelta(), 0.1);
 
-        this.explosionController.update(delta);
+        if (this.explosionController) {
+          this.explosionController.update(delta);
 
-        if (this.explosionController.introPlaying) {
-          const displayVal = Math.round(this.explosionController.getDisplayFactor() * 100);
-          this.slider.value = displayVal;
-          this.sliderValue.textContent = displayVal + '%';
-          this._introWasPlaying = true;
-        } else if (this._introWasPlaying) {
-          this.slider.value = 0;
-          this.sliderValue.textContent = '0%';
-          this._introWasPlaying = false;
+          if (this.explosionController.introPlaying) {
+            const displayVal = Math.round(this.explosionController.getDisplayFactor() * 100);
+            this.slider.value = displayVal;
+            this.sliderValue.textContent = displayVal + '%';
+            this._introWasPlaying = true;
+          } else if (this._introWasPlaying) {
+            this.slider.value = 0;
+            this.sliderValue.textContent = '0%';
+            this._introWasPlaying = false;
+          }
         }
 
         this.sceneManager.updateCameraAnim(delta);
