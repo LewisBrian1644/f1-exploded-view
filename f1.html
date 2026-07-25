@@ -1234,6 +1234,24 @@
 
         console.log(`Found ${meshes.length} named meshes`);
 
+        // Debug: show what groups were resolved (Ferrari parentGroup mode)
+        if (useParentGroup) {
+          const debugGroups = {};
+          meshes.forEach(m => { debugGroups[m.zhName] = (debugGroups[m.zhName]||0)+1; });
+          console.log('Resolved groups:', debugGroups);
+        }
+
+        // Optimization: for Ferrari, merge decals into main body to reduce part count
+        if (useParentGroup && decalsGroup) {
+          const bodyZh = parentGroupMap['Main Body'] ? parentGroupMap['Main Body'].zh : '车身主体';
+          meshes.forEach(m => {
+            if (m.zhName === decalsGroup.zh) {
+              m.zhName = bodyZh;
+              m.category = parentGroupMap['Main Body'].cat;
+            }
+          });
+        }
+
         // Group meshes by Chinese name (multiple meshes may share the same name)
         const groups = new Map(); // zhName → { meshes[], category }
         const catParts = {};      // category → count
