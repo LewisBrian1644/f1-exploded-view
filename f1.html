@@ -1164,9 +1164,20 @@
         const parentGroupMap = currentCar.parentGroupMap || {};
         const decalsGroup = currentCar.decalsGroup || null;
 
-        // Helper: clean parent group name (remove Sketchfab suffixes like "_16")
+        // Helper: clean parent group name (handle Sketchfab suffixes and non-breaking spaces)
         function cleanGroupName(name) {
-          return name.replace(/_\d+$/, '').replace(/\.\d+$/, '');
+          return name.replace(/ /g, ' ').replace(/_\d+$/, '').replace(/\.\d+$/, '');
+        }
+
+        // Also normalize parentGroupMap keys at car init
+        if (useParentGroup && currentCar._keysNormalized !== true) {
+          const normalized = {};
+          Object.keys(parentGroupMap).forEach(k => {
+            const nk = k.replace(/ /g, ' ');
+            normalized[nk] = parentGroupMap[k];
+          });
+          currentCar.parentGroupMap = normalized;
+          currentCar._keysNormalized = true;
         }
 
         model.traverse((child) => {
@@ -1234,11 +1245,11 @@
 
         console.log(`Found ${meshes.length} named meshes`);
 
-        // Debug: show what groups were resolved (Ferrari parentGroup mode)
+        // Summarize resolved groups
         if (useParentGroup) {
           const debugGroups = {};
           meshes.forEach(m => { debugGroups[m.zhName] = (debugGroups[m.zhName]||0)+1; });
-          console.log('Resolved groups:', debugGroups);
+          console.log('Resolved groups:', JSON.stringify(debugGroups));
         }
 
         // Optimization: for Ferrari, merge decals into main body to reduce part count
