@@ -697,48 +697,40 @@
         modelPath: 'ferrari-f1-2019/scene.gltf',
         cameraPos: [4, 1.8, 6],
         cameraTarget: [0, 0.0, 0.3],
-        groupBy: 'objectName',  // 通过 gltf 节点名称映射（Object_8 → 左前轮胎 等）
+        groupBy: 'objectName',  // 通过 gltf mesh 名称映射（Object_0 → 车身主体 等）
         objectNames: {
-          // 车身主体 (Main Body)
-          'Object_8':  { zh: '车身主体',       cat: 'chassis' },
-          'Object_10': { zh: '车身面板A',      cat: 'chassis' },
-          'Object_12': { zh: '车身面板B',      cat: 'chassis' },
-          'Object_14': { zh: '车身面板C',      cat: 'chassis' },
+          // 车身主体 (Main Body) — 4片
+          'Object_0':  { zh: '车身主体',       cat: 'chassis' },
+          'Object_1':  { zh: '车身面板A',      cat: 'chassis' },
+          'Object_2':  { zh: '车身面板B',      cat: 'chassis' },
+          'Object_3':  { zh: '车身面板C',      cat: 'chassis' },
           // 动力单元
-          'Object_17': { zh: '排气系统',       cat: 'powerunit' },
-          'Object_20': { zh: '后传动系统',     cat: 'powerunit' },
+          'Object_4':  { zh: '排气系统',       cat: 'powerunit' },
+          'Object_5':  { zh: '后传动系统',     cat: 'powerunit' },
           // 电子/其他
-          'Object_23': { zh: '天线',           cat: 'elec' },
-          'Object_53': { zh: '方向盘',         cat: 'elec' },
-          'Object_56': { zh: '换挡拨片',       cat: 'elec' },
-          'Object_59': { zh: '内部零件',       cat: 'chassis' },
-          'Object_62': { zh: '控制旋钮',       cat: 'elec' },
-          'Object_65': { zh: '按钮组',         cat: 'elec' },
-          'Object_68': { zh: '握把按钮',       cat: 'elec' },
-          // 座舱
-          'Object_26': { zh: '座椅',           cat: 'cockpit' },
-          // 左前
-          'Object_29': { zh: '左前轮胎',       cat: 'wheels' },
-          'Object_32': { zh: '左前轮辋',       cat: 'wheels' },
-          // 右前
-          'Object_35': { zh: '右前轮胎',       cat: 'wheels' },
-          'Object_38': { zh: '右前轮辋',       cat: 'wheels' },
-          // 左后
-          'Object_41': { zh: '左后轮胎',       cat: 'wheels' },
-          'Object_44': { zh: '左后轮辋',       cat: 'wheels' },
-          // 右后
-          'Object_47': { zh: '右后轮胎',       cat: 'wheels' },
-          'Object_50': { zh: '右后轮辋',       cat: 'wheels' },
-          // 贴花 (全部合并到车身)
-          'Object_71': { zh: '赞助商贴花',     cat: 'chassis' },
-          'Object_74': { zh: '赞助商贴花',     cat: 'chassis' },
-          'Object_77': { zh: '赞助商贴花',     cat: 'chassis' },
-          'Object_80': { zh: '赞助商贴花',     cat: 'chassis' },
-          'Object_83': { zh: '赞助商贴花',     cat: 'chassis' },
-          'Object_86': { zh: '赞助商贴花',     cat: 'chassis' },
-          'Object_89': { zh: '赞助商贴花',     cat: 'chassis' },
+          'Object_6':  { zh: '天线',           cat: 'elec' },
+          'Object_7':  { zh: '座椅',           cat: 'cockpit' },
+          'Object_16': { zh: '方向盘',         cat: 'elec' },
+          'Object_17': { zh: '换挡拨片',       cat: 'elec' },
+          'Object_18': { zh: '内部零件',       cat: 'chassis' },
+          'Object_19': { zh: '控制旋钮',       cat: 'elec' },
+          'Object_20': { zh: '按钮组',         cat: 'elec' },
+          'Object_21': { zh: '握把按钮',       cat: 'elec' },
+          // 左前轮
+          'Object_8':  { zh: '左前轮胎',       cat: 'wheels' },
+          'Object_9':  { zh: '左前轮辋',       cat: 'wheels' },
+          // 右前轮
+          'Object_10': { zh: '右前轮胎',       cat: 'wheels' },
+          'Object_11': { zh: '右前轮辋',       cat: 'wheels' },
+          // 左后轮
+          'Object_12': { zh: '左后轮胎',       cat: 'wheels' },
+          'Object_13': { zh: '左后轮辋',       cat: 'wheels' },
+          // 右后轮
+          'Object_14': { zh: '右后轮胎',       cat: 'wheels' },
+          'Object_15': { zh: '右后轮辋',       cat: 'wheels' },
         },
-        // 所有剩余未命名的 Object_* 如果没有匹配就归入车身
+        // Object_22+ 全部是贴花，由通用 fallback 归入 decalsGroup
+        decalsGroup: { zh: '赞助商贴花', cat: 'chassis' },
       },
     ];
 
