@@ -685,10 +685,42 @@
         modelPath: 'model/scene.gltf',
         cameraPos: [3.5, 2.0, 5.5],
         cameraTarget: [0, 0.2, 0.5],
-        objectNames: {},  // filled below
-        namedMeshInfo: {}, // filled below
+        groupBy: 'meshName',   // 通过 mesh 名称识别部件
+        objectNames: {},       // 由下方填充
+        namedMeshInfo: {},     // 由下方填充
       },
-      // 未来可在此添加更多车型
+      {
+        id: 'ferrari-sf90',
+        name: 'Ferrari SF90',
+        year: '2019',
+        team: 'Scuderia Ferrari',
+        modelPath: 'ferrari-f1-2019/scene.gltf',
+        cameraPos: [4, 1.8, 6],
+        cameraTarget: [0, 0.0, 0.3],
+        groupBy: 'parentGroup', // 通过父节点名称识别部件
+        parentGroupMap: {
+          'Main Body':        { zh: '车身主体',       cat: 'chassis' },
+          'Exhaust':          { zh: '排气系统',       cat: 'powerunit' },
+          'Rear Transmission':{ zh: '后传动系统',     cat: 'powerunit' },
+          'Antennas':         { zh: '天线',           cat: 'elec' },
+          'Seat':             { zh: '座椅',           cat: 'cockpit' },
+          'Steering Wheel':   { zh: '方向盘',         cat: 'elec' },
+          'Gears':            { zh: '换挡拨片',       cat: 'elec' },
+          'Its for something':{ zh: '内部零件',       cat: 'chassis' },
+          'Ferrari Button':   { zh: '控制旋钮',       cat: 'elec' },
+          'Buttons':          { zh: '按钮组',         cat: 'elec' },
+          'Grip Button':      { zh: '握把按钮',       cat: 'elec' },
+          'Tire FL':          { zh: '左前轮胎',       cat: 'wheels' },
+          'Rim FL':           { zh: '左前轮辋',       cat: 'wheels' },
+          'Tire FR':          { zh: '右前轮胎',       cat: 'wheels' },
+          'Rim FR':           { zh: '右前轮辋',       cat: 'wheels' },
+          'Tire RL':          { zh: '左后轮胎',       cat: 'wheels' },
+          'Rim RL':           { zh: '左后轮辋',       cat: 'wheels' },
+          'Tire RL.001':      { zh: '右后轮胎',       cat: 'wheels' },
+          'Rim RL.001':       { zh: '右后轮辋',       cat: 'wheels' },
+        },
+        decalsGroup: { zh: '赞助商贴花', cat: 'chassis' }, // 所有 Decal* 归入此组
+      },
     ];
 
     // 当前选中的车型（变量在对象定义后赋值）
@@ -1128,6 +1160,15 @@
 
         // Collect all meshes with their FULL world transforms
         const meshes = [];
+        const useParentGroup = (currentCar.groupBy === 'parentGroup');
+        const parentGroupMap = currentCar.parentGroupMap || {};
+        const decalsGroup = currentCar.decalsGroup || null;
+
+        // Helper: clean parent group name (remove Sketchfab suffixes like "_16")
+        function cleanGroupName(name) {
+          return name.replace(/_\d+$/, '').replace(/\.\d+$/, '');
+        }
+
         model.traverse((child) => {
           if (child.isMesh && child.name) {
             const wp = new THREE.Vector3();
@@ -1135,21 +1176,47 @@
             const ws = new THREE.Vector3();
             child.matrixWorld.decompose(wp, wq, ws);
 
-            // Resolve Chinese name
             let zhName, category;
-            const objInfo = resolveObjectName(child.name);
-            if (objInfo) {
-              zhName = objInfo.zh;
-              category = objInfo.category;
-            } else {
-              const namedInfo = NAMED_MESH_INFO[child.name];
-              if (namedInfo) {
-                zhName = namedInfo.zh;
-                category = namedInfo.cat;
-              } else {
-                // Fallback for any other named meshes
+
+            if (useParentGroup) {
+              // Ferrari-style: find top-level parent group name
+              let p = child.parent;
+              while (p && p !== model) {
+                // Check if this parent's cleaned name matches a group
+                const clean = cleanGroupName(p.name || '');
+                if (parentGroupMap[clean]) {
+                  zhName = parentGroupMap[clean].zh;
+                  category = parentGroupMap[clean].cat;
+                  break;
+                }
+                // Check if it's a decal group
+                if (decalsGroup && /decal/i.test(clean)) {
+                  zhName = decalsGroup.zh;
+                  category = decalsGroup.cat;
+                  break;
+                }
+                p = p.parent;
+              }
+              // Fallback
+              if (!zhName) {
                 zhName = child.name.replace(/_/g, ' ');
                 category = 'chassis';
+              }
+            } else {
+              // AMR26-style: use Object_# and named mesh mappings
+              const objInfo = resolveObjectName(child.name);
+              if (objInfo) {
+                zhName = objInfo.zh;
+                category = objInfo.category;
+              } else {
+                const namedInfo = NAMED_MESH_INFO[child.name];
+                if (namedInfo) {
+                  zhName = namedInfo.zh;
+                  category = namedInfo.cat;
+                } else {
+                  zhName = child.name.replace(/_/g, ' ');
+                  category = 'chassis';
+                }
               }
             }
 
@@ -1564,94 +1631,129 @@
         this.loadingOverlay = document.getElementById('loading-overlay');
         this.progressFill = document.getElementById('progress-fill');
         this.loadingText = document.getElementById('loading-text');
+        this.carSelector = document.getElementById('car-selector');
       }
 
       async init() {
         this.toast = new Toast(this.toastEl);
 
+        // Populate car selector
+        CARS.forEach(car => {
+          const opt = document.createElement('option');
+          opt.value = car.id;
+          opt.textContent = `${car.name} (${car.year})`;
+          this.carSelector.appendChild(opt);
+        });
+        this.carSelector.value = currentCar.id;
+        this.carSelector.addEventListener('change', () => this.switchCar());
+
         // Init 3D scene
         this.sceneManager = new SceneManager(this.canvasContainer);
         this.sceneManager.init();
+
+        // Bind events (non-model-dependent ones)
+        this.bindEvents();
+        this.clock = new THREE.Clock();
+        this.animate();
+
+        // Load first car
+        await this.loadCurrentCar();
+      }
+
+      async loadCurrentCar() {
+        // Reset state
+        this.selectedPartId = null;
+        this.infoPanel.classList.remove('has-selection', 'sheet-open');
+        this.infoPanel.classList.add('hidden');
+        this.slider.value = 0;
+        this.sliderValue.textContent = '0%';
+
+        // Show loading
+        this.loadingOverlay.classList.remove('hidden');
+        this.progressFill.style.width = '0%';
+        this.progressFill.style.background = '';
+        this.loadingText.textContent = `加载 ${currentCar.name}...`;
+
+        // Clean up old parts
+        if (this.extractor) {
+          // Remove old pivot group from scene
+          this.sceneManager.scene.remove(this.extractor.pivotGroup);
+        }
+        this.parts = [];
+        this.explosionController = null;
+        this.interactionManager = null;
+
+        // Update global refs for name resolution
+        OBJECT_NAMES = currentCar.objectNames || {};
+        NAMED_MESH_INFO = currentCar.namedMeshInfo || {};
 
         // Load and extract model
         this.extractor = new ModelPartExtractor(this.sceneManager.scene);
 
         try {
-          this.parts = await this.extractor.loadAndExtract('model/scene.gltf', (pct) => {
+          this.parts = await this.extractor.loadAndExtract(currentCar.modelPath, (pct) => {
             const percent = Math.round(pct * 100);
             this.progressFill.style.width = percent + '%';
-            if (percent < 40) {
-              this.loadingText.textContent = '下载模型中... ' + percent + '%';
-            } else if (percent < 70) {
-              this.loadingText.textContent = '解析贴图... ' + percent + '%';
-            } else {
-              this.loadingText.textContent = '构建部件... ' + percent + '%';
-            }
+            if (percent < 40) this.loadingText.textContent = `下载模型中... ${percent}%`;
+            else if (percent < 70) this.loadingText.textContent = `解析贴图... ${percent}%`;
+            else this.loadingText.textContent = `构建部件... ${percent}%`;
           });
         } catch (err) {
           console.error('Failed to load model:', err);
-          this.loadingText.innerHTML = `
-            <div style="text-align:center;color:#e74c3c;">
-              <div style="font-size:1.2rem;margin-bottom:0.5rem;">❌ 模型加载失败</div>
-              <div style="font-size:0.75rem;margin-bottom:0.5rem;">请使用本地服务器打开此页面</div>
-              <code style="font-size:0.7rem;background:#333;padding:0.3rem 0.6rem;border-radius:4px;">
-                npx serve .   或   python -m http.server 8080
-              </code>
-              <div style="font-size:0.7rem;margin-top:0.5rem;color:#999;">然后访问 http://localhost:8080/f1.html</div>
-            </div>
-          `;
+          this.loadingText.innerHTML = `<div style="text-align:center;color:#e74c3c;"><div style="font-size:1.2rem;margin-bottom:0.5rem;">❌ 模型加载失败</div><div style="font-size:0.75rem;margin-bottom:0.5rem;">请使用本地服务器打开此页面</div><code style="font-size:0.7rem;background:#333;padding:0.3rem 0.6rem;border-radius:4px;">npx serve .   或   python -m http.server 8080</code></div>`;
           this.progressFill.style.width = '100%';
           this.progressFill.style.background = '#e74c3c';
           return;
         }
 
-        // Hide loading overlay
-        setTimeout(() => {
-          this.loadingOverlay.classList.add('hidden');
-        }, 400);
+        setTimeout(() => { this.loadingOverlay.classList.add('hidden'); }, 400);
 
         if (this.parts.length === 0) {
           this.loadingText.textContent = '⚠️ 未能提取到任何模型部件';
           return;
         }
 
-        // Init explosion controller
+        // Update camera for this car
+        const cp = currentCar.cameraPos;
+        const ct = currentCar.cameraTarget;
+        this.sceneManager.camera.position.set(...cp);
+        this.sceneManager.controls.target.set(...ct);
+        this.sceneManager.defaultCameraPos = new THREE.Vector3(...cp);
+        this.sceneManager.defaultTarget = new THREE.Vector3(...ct);
+        this.sceneManager.controls.update();
+
+        // Init controllers
         this.explosionController = new ExplosionController(this.parts);
-
-        // Init interaction
         this.interactionManager = new InteractionManager(
-          this.sceneManager.camera,
-          this.sceneManager.renderer.domElement,
-          this.parts
+          this.sceneManager.camera, this.sceneManager.renderer.domElement, this.parts
         );
-
         this.interactionManager.onSelect = (part) => {
-          if (part) {
-            this.selectPart(part.id);
-          } else {
-            this.deselectPart();
-          }
+          if (part) this.selectPart(part.id); else this.deselectPart();
         };
 
-        // Build category buttons
+        // Rebuild sidebar
         this.buildCategoryButtons();
 
-        // Bind events
-        this.bindEvents();
-
-        // Start animation
-        this.clock = new THREE.Clock();
-        this.animate();
-
-        // Intro animation
+        // Intro
         setTimeout(() => {
           this.explosionController.startIntro();
           this.slider.value = 35;
           this.sliderValue.textContent = '35%';
-          this.toast.show('🏎️ 2026 Aston Martin AMR26 · 点击部件查看详情', 5000);
+          this.toast.show(`🏎️ ${currentCar.name} · 点击部件查看详情`, 5000);
         }, 600);
 
-        this.toast.show('🏎️ 拖拽旋转 | 滚轮缩放 | 右键平移 | 点击部件查看详情', 4000);
+        this.toast.show(`✅ 已切换至 ${currentCar.name}`, 3000);
+      }
+
+      async switchCar() {
+        const carId = this.carSelector.value;
+        const car = CARS.find(c => c.id === carId);
+        if (!car || car.id === currentCar.id) return;
+
+        currentCar = car;
+        this.carSelector.disabled = true; // prevent double-click
+        await this.loadCurrentCar();
+        this.carSelector.disabled = false;
       }
 
       buildCategoryButtons() {
