@@ -1173,23 +1173,46 @@
             pivot.add(clone);
           }
 
-          // Determine explosion direction with vertical emphasis
+          // Determine explosion direction using golden-angle distribution
+          // Each part gets a unique angular offset to prevent overlap at 100%
           const dir = center.clone().sub(this.modelCenter);
           const dist = dir.length();
+
           if (dist < 0.05) {
-            // Center parts: go upward with slight random scatter
-            dir.set((Math.random() - 0.5) * 0.3, 0.6 + Math.random() * 0.4, (Math.random() - 0.5) * 0.3);
+            // Center parts: spread upward in a fan pattern
+            const ga = idx * Math.PI * (3 - Math.sqrt(5));
+            dir.set(Math.cos(ga) * 0.4, 0.6 + Math.sin(idx * 0.5) * 0.4, Math.sin(ga) * 0.4);
             dir.normalize();
           } else {
+            // Convert to spherical coords for angular perturbation
+            const theta = Math.atan2(dir.x, dir.z);
+            const phi = Math.acos(Math.max(-1, Math.min(1, dir.y / dist)));
+
+            // Golden-angle perturbation: each part gets a unique offset
+            const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+            const perturbTheta = (idx * goldenAngle * 0.35) % (Math.PI * 2);
+            const perturbPhi   = (idx * goldenAngle * 0.25) % Math.PI;
+
+            // Blend perturbed with original direction (70% original, 30% perturbed)
+            const t = 0.30;
+            const newTheta = theta * (1 - t) + perturbTheta * t;
+            const newPhi   = phi   * (1 - t) + perturbPhi   * t;
+
+            dir.set(
+              Math.sin(newPhi) * Math.cos(newTheta),
+              Math.cos(newPhi),
+              Math.sin(newPhi) * Math.sin(newTheta)
+            );
             dir.normalize();
-            // Amplify vertical separation: parts above center go more up, below go more down
-            const verticalOffset = (center.y - this.modelCenter.y);
-            dir.y += verticalOffset * 1.5;
+
+            // Boost vertical separation for visual appeal
+            const verticalBias = (center.y - this.modelCenter.y) * 0.8;
+            dir.y += verticalBias;
             dir.normalize();
           }
 
-          // Larger explosion range for better visual separation
-          const maxDist = Math.max(0.5, dist * 1.6 + 0.5);
+          // Explosion distance: scale by original distance from center, with higher base
+          const maxDist = Math.max(1.2, dist * 2.0 + 0.8);
 
           // Generate display name and description (use description from first mesh in group)
           const categoryZh = (CATEGORIES.find(c => c.id === group.category) || {}).labelZh || group.category;
