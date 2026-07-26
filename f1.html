@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>F1 爆炸视图 - 2026 Aston Martin AMR26</title>
+  <title>F1 爆炸视图 - Aston Martin AMR26</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='28' font-size='28'%3E%F0%9F%8F%8E%3C/text%3E%3C/svg%3E">
   <script>
     (function() {
@@ -647,24 +647,13 @@
       { id: 'cooling',    label: 'Cooling',        labelZh: '冷却系统',     color: '#1abc9c', shortcut: '8' },
     ];
 
-    const CAT_COLORS = {};
-    CATEGORIES.forEach(c => { CAT_COLORS[c.id] = c.color; });
-
     // ===== 🏎️ 车辆配置 =====
     const CAR = {
-      id: 'amr26',
       name: 'Aston Martin AMR26',
-      year: '2026',
-      team: 'Aston Martin Aramco F1',
       modelPath: 'model/scene.gltf',
       cameraPos: [3.5, 2.0, 5.5],
       cameraTarget: [0, 0.2, 0.5],
-      objectNames: {},       // 由下方填充
-      namedMeshInfo: {},     // 由下方填充
     };
-
-    let OBJECT_NAMES;
-    let NAMED_MESH_INFO;
 
     // ===== Object_# → 中文名称映射 (基于glTF节点层级分析) =====
     CAR.objectNames = {
@@ -872,14 +861,11 @@
       'Object_151':{ zh: '侧箱导流板',     cat: 'aero' },
     };
 
-    // 未在表中列出的 Object_# 默认归入 chassis
-    function resolveObjectName(name) {
-      const info = OBJECT_NAMES[name];
-      if (info) return { zh: info.zh, category: info.cat };
-      // 未知 Object_ → 尝试推断
-      if (/^Object_\d+$/.test(name)) {
-        return { zh: '车身零件(' + name + ')', category: 'chassis' };
-      }
+    // 根据 mesh 名称解析中文名和分类（先 Object_# 映射，再命名 mesh 映射）
+    function resolveMeshName(name) {
+      const entry = CAR.objectNames[name] || CAR.namedMeshInfo[name];
+      if (entry) return { zh: entry.zh, category: entry.cat };
+      if (/^Object_\d+$/.test(name)) return { zh: '车身零件(' + name + ')', category: 'chassis' };
       return null;
     }
 
@@ -925,10 +911,6 @@
       mirrors:            { zh: '空气动力学后视镜',cat: 'aero' },
     };
 
-    // 将引用指向当前车型
-    OBJECT_NAMES = CAR.objectNames;
-    NAMED_MESH_INFO = CAR.namedMeshInfo;
-
     // ===== SceneManager =====
     class SceneManager {
       constructor(container) {
@@ -957,8 +939,8 @@
         this.scene.fog = new THREE.Fog('#1a1a1a', 8, 30);
 
         this.camera = new THREE.PerspectiveCamera(40, w / h, 0.1, 100);
-        this.camera.position.set(3.5, 2.0, 5.5);
-        this.camera.lookAt(0, 0.2, 0.5);
+        this.camera.position.set(...CAR.cameraPos);
+        this.camera.lookAt(...CAR.cameraTarget);
 
         // Lights
         const ambient = new THREE.AmbientLight('#8899bb', 0.7);
@@ -1015,7 +997,7 @@
         this.controls.update();
 
         this.defaultCameraPos = this.camera.position.clone();
-        this.defaultTarget = new THREE.Vector3(0, 0.2, 0.5);
+        this.defaultTarget = new THREE.Vector3(...CAR.cameraTarget);
 
         this._cameraAnimTarget = null;
         this._cameraAnimStart = null;
@@ -1108,20 +1090,13 @@
 
             let zhName, category;
 
-            // Try Object_# mapping first, then named mesh mapping, then fallback
-            const objInfo = resolveObjectName(child.name);
-            if (objInfo) {
-              zhName = objInfo.zh;
-              category = objInfo.category;
+            const info = resolveMeshName(child.name);
+            if (info) {
+              zhName = info.zh;
+              category = info.category;
             } else {
-              const namedInfo = NAMED_MESH_INFO[child.name];
-              if (namedInfo) {
-                zhName = namedInfo.zh;
-                category = namedInfo.cat;
-              } else {
-                zhName = child.name.replace(/_/g, ' ');
-                category = 'chassis';
-              }
+              zhName = child.name.replace(/_/g, ' ');
+              category = 'chassis';
             }
 
             meshes.push({
@@ -1213,8 +1188,8 @@
 
           // Generate display name and description
           const categoryZh = (CATEGORIES.find(c => c.id === group.category) || {}).labelZh || group.category;
-          const func = `${categoryZh}组件 — ${zhName}。2026赛季 Aston Martin AMR26 精密赛车部件。`;
-          const specs = ['2026 Aston Martin AMR26', 'Sketchfab高精度3D扫描模型', 'PBR物理渲染材质'];
+          const func = `${categoryZh}组件 — ${zhName}。${CAR.name} 精密赛车部件。`;
+          const specs = [CAR.name, 'Sketchfab高精度3D扫描模型', 'PBR物理渲染材质'];
 
           const id = `part-${idx++}`;
 
@@ -1249,8 +1224,8 @@
 
         // Sort parts: center parts first, then by distance from center
         this.parts.sort((a, b) => {
-          const da = a.center.distanceTo(this.modelCenter);
-          const db = b.center.distanceTo(this.modelCenter);
+          const da = a.center.distanceToSquared(this.modelCenter);
+          const db = b.center.distanceToSquared(this.modelCenter);
           return da - db;
         });
 
@@ -1547,7 +1522,7 @@
         this.loadingOverlay = document.getElementById('loading-overlay');
         this.progressFill = document.getElementById('progress-fill');
         this.loadingText = document.getElementById('loading-text');
-
+        this._introWasPlaying = false;
       }
 
       async init() {
@@ -1587,10 +1562,6 @@
         this.parts = [];
         this.explosionController = null;
         this.interactionManager = null;
-
-        // Update global refs for name resolution
-        OBJECT_NAMES = CAR.objectNames || {};
-        NAMED_MESH_INFO = CAR.namedMeshInfo || {};
 
         // Load and extract model
         this.extractor = new ModelPartExtractor(this.sceneManager.scene);
@@ -1760,8 +1731,9 @@
 
         const catInfo = CATEGORIES.find(c => c.id === part.category);
         document.getElementById('info-category').textContent = catInfo ? catInfo.labelZh : part.category;
-        document.getElementById('info-category').style.setProperty('--cat-color', CAT_COLORS[part.category] || '#999');
-        document.getElementById('info-category').style.background = CAT_COLORS[part.category] || '#999';
+        const catColor = catInfo ? catInfo.color : '#999';
+        document.getElementById('info-category').style.setProperty('--cat-color', catColor);
+        document.getElementById('info-category').style.background = catColor;
         document.getElementById('info-name').textContent = part.zh || part.meshName;
         document.getElementById('info-function').textContent = part.func || '';
         const specsList = document.getElementById('info-specs');
@@ -1816,7 +1788,7 @@
     const app = new App();
     app.init();
 
-    console.log('🏎️  F1 Exploded View - 2026 Aston Martin AMR26');
+    console.log(`🏎️  F1 Exploded View - ${CAR.name}`);
     console.log('   glTF Model Loader ✓');
     console.log('   Part Extraction ✓');
     console.log('   Explosion Controller ✓');
