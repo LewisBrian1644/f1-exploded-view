@@ -1173,31 +1173,31 @@
             pivot.add(clone);
           }
 
-          // Determine explosion direction with vertical emphasis
-          // Snap X coordinate to 0 for centerline symmetry
-          const relX = (Math.abs(center.x - this.modelCenter.x) < 0.02) ? 0 : (center.x - this.modelCenter.x);
+          // Determine explosion direction
+          // Strategy: parts explode radially from model center, but centerline parts
+          // (near X=0) get boosted vertical separation instead of horizontal
+          const relX = center.x - this.modelCenter.x;
           const relY = center.y - this.modelCenter.y;
           const relZ = center.z - this.modelCenter.z;
-          const dir = new THREE.Vector3(relX, relY, relZ);
-          const dist = dir.length();
+          const rawDist = Math.sqrt(relX * relX + relY * relY + relZ * relZ);
 
-          if (dist < 0.05) {
-            // Center parts: explode purely upward (deterministic, no random)
-            dir.set(0, 1, 0);
+          const dir = new THREE.Vector3(relX, relY, relZ);
+
+          if (rawDist < 0.03) {
+            // Dead center: pure vertical, above → up, below → down
+            dir.set(0, relY >= 0 ? 1 : -1, 0);
           } else {
-            dir.normalize();
-            // Amplify vertical separation: parts above center go more up, below go more down
-            const verticalOffset = relY;
-            dir.y += verticalOffset * 1.5;
+            // Centerline bias: 1.0 at centerline, 0.0 at far edges
+            const centerlineBias = Math.max(0, 1 - Math.abs(relX) / 0.6);
+            // Suppress horizontal, amplify vertical for centerline parts
+            const hScale = 1 - centerlineBias * 0.65;
+            dir.x *= hScale;
+            dir.z *= hScale;
+            dir.y += centerlineBias * 2.5 * (relY >= 0 ? 1 : -1);
             dir.normalize();
           }
 
-          // Explosion distance: use absolute (unsigned) distances for left-right symmetry
-          // For lateral parts, use the magnitude of X offset to ensure symmetric pairs match
-          const symDist = new THREE.Vector3(
-            Math.abs(relX), relY, Math.abs(relZ)
-          ).length();
-          const maxDist = Math.max(0.5, symDist * 1.6 + 0.5);
+          const maxDist = Math.max(0.6, rawDist * 1.6 + 0.5);
 
           // Generate display name and description (use description from first mesh in group)
           const categoryZh = (CATEGORIES.find(c => c.id === group.category) || {}).labelZh || group.category;
