@@ -1173,46 +1173,31 @@
             pivot.add(clone);
           }
 
-          // Determine explosion direction using golden-angle distribution
-          // Each part gets a unique angular offset to prevent overlap at 100%
-          const dir = center.clone().sub(this.modelCenter);
+          // Determine explosion direction with vertical emphasis
+          // Snap X coordinate to 0 for centerline symmetry
+          const relX = (Math.abs(center.x - this.modelCenter.x) < 0.02) ? 0 : (center.x - this.modelCenter.x);
+          const relY = center.y - this.modelCenter.y;
+          const relZ = center.z - this.modelCenter.z;
+          const dir = new THREE.Vector3(relX, relY, relZ);
           const dist = dir.length();
 
           if (dist < 0.05) {
-            // Center parts: spread upward in a fan pattern
-            const ga = idx * Math.PI * (3 - Math.sqrt(5));
-            dir.set(Math.cos(ga) * 0.4, 0.6 + Math.sin(idx * 0.5) * 0.4, Math.sin(ga) * 0.4);
-            dir.normalize();
+            // Center parts: explode purely upward (deterministic, no random)
+            dir.set(0, 1, 0);
           } else {
-            // Convert to spherical coords for angular perturbation
-            const theta = Math.atan2(dir.x, dir.z);
-            const phi = Math.acos(Math.max(-1, Math.min(1, dir.y / dist)));
-
-            // Golden-angle perturbation: each part gets a unique offset
-            const goldenAngle = Math.PI * (3 - Math.sqrt(5));
-            const perturbTheta = (idx * goldenAngle * 0.35) % (Math.PI * 2);
-            const perturbPhi   = (idx * goldenAngle * 0.25) % Math.PI;
-
-            // Blend perturbed with original direction (70% original, 30% perturbed)
-            const t = 0.30;
-            const newTheta = theta * (1 - t) + perturbTheta * t;
-            const newPhi   = phi   * (1 - t) + perturbPhi   * t;
-
-            dir.set(
-              Math.sin(newPhi) * Math.cos(newTheta),
-              Math.cos(newPhi),
-              Math.sin(newPhi) * Math.sin(newTheta)
-            );
             dir.normalize();
-
-            // Boost vertical separation for visual appeal
-            const verticalBias = (center.y - this.modelCenter.y) * 0.8;
-            dir.y += verticalBias;
+            // Amplify vertical separation: parts above center go more up, below go more down
+            const verticalOffset = relY;
+            dir.y += verticalOffset * 1.5;
             dir.normalize();
           }
 
-          // Explosion distance: scale by original distance from center, with higher base
-          const maxDist = Math.max(1.2, dist * 2.0 + 0.8);
+          // Explosion distance: use absolute (unsigned) distances for left-right symmetry
+          // For lateral parts, use the magnitude of X offset to ensure symmetric pairs match
+          const symDist = new THREE.Vector3(
+            Math.abs(relX), relY, Math.abs(relZ)
+          ).length();
+          const maxDist = Math.max(0.5, symDist * 1.6 + 0.5);
 
           // Generate display name and description (use description from first mesh in group)
           const categoryZh = (CATEGORIES.find(c => c.id === group.category) || {}).labelZh || group.category;
