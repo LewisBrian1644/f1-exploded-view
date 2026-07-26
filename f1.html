@@ -1174,8 +1174,9 @@
           }
 
           // Determine explosion direction
-          // Strategy: parts explode radially from model center, but centerline parts
-          // (near X=0) get boosted vertical separation instead of horizontal
+          // Parts explode radially from model center. Near-centerline parts (|X| small)
+          // get a vertical boost so the car "opens" along its spine instead of splitting
+          // left-right. Far-side parts (wheels, suspension) keep their natural radial direction.
           const relX = center.x - this.modelCenter.x;
           const relY = center.y - this.modelCenter.y;
           const relZ = center.z - this.modelCenter.z;
@@ -1183,21 +1184,23 @@
 
           const dir = new THREE.Vector3(relX, relY, relZ);
 
-          if (rawDist < 0.03) {
-            // Dead center: pure vertical, above → up, below → down
+          if (rawDist < 0.02) {
+            // Dead center: pure vertical, sign from Y
             dir.set(0, relY >= 0 ? 1 : -1, 0);
           } else {
-            // Centerline bias: 1.0 at centerline, 0.0 at far edges
-            const centerlineBias = Math.max(0, 1 - Math.abs(relX) / 0.6);
-            // Suppress horizontal, amplify vertical for centerline parts
-            const hScale = 1 - centerlineBias * 0.65;
-            dir.x *= hScale;
-            dir.z *= hScale;
-            dir.y += centerlineBias * 2.5 * (relY >= 0 ? 1 : -1);
+            dir.normalize();
+            // Centerline bias — only the narrow spine (|X| < 0.30m) gets vertical emphasis
+            const absX = Math.abs(relX);
+            const centerlineBias = Math.max(0, 1 - absX / 0.30);
+            dir.y += centerlineBias * 2.0 * (relY >= 0 ? 1 : -1);
+            dir.x *= (1 - centerlineBias * 0.5);
+            dir.z *= (1 - centerlineBias * 0.5);
             dir.normalize();
           }
 
-          const maxDist = Math.max(0.6, rawDist * 1.6 + 0.5);
+          // Explosion distance — larger multiplier so nearby parts (tyre vs brake disc
+          // in the same corner) visibly separate. Far parts travel proportionally farther.
+          const maxDist = Math.max(0.8, rawDist * 2.3 + 0.8);
 
           // Generate display name and description (use description from first mesh in group)
           const categoryZh = (CATEGORIES.find(c => c.id === group.category) || {}).labelZh || group.category;
