@@ -653,6 +653,8 @@
       modelPath: 'model/scene.gltf',
       cameraPos: [3.5, 2.0, 5.5],
       cameraTarget: [0, 0.2, 0.5],
+      // 手动爆炸覆盖: { 部件中文名: [dx, dy, dz] } — 空对象表示全部用算法
+      explosionOverrides: {},
     };
 
     // ===== Object_# → 真实F1部件名称与描述 =====
@@ -1173,34 +1175,23 @@
             pivot.add(clone);
           }
 
-          // Determine explosion direction
-          // Parts explode radially from model center. Near-centerline parts (|X| small)
-          // get a vertical boost so the car "opens" along its spine instead of splitting
-          // left-right. Far-side parts (wheels, suspension) keep their natural radial direction.
-          const relX = center.x - this.modelCenter.x;
-          const relY = center.y - this.modelCenter.y;
-          const relZ = center.z - this.modelCenter.z;
-          const rawDist = Math.sqrt(relX * relX + relY * relY + relZ * relZ);
-
-          const dir = new THREE.Vector3(relX, relY, relZ);
-
-          if (rawDist < 0.02) {
-            // Dead center: pure vertical, sign from Y
-            dir.set(0, relY >= 0 ? 1 : -1, 0);
+          // Determine explosion direction with vertical emphasis
+          const dir = center.clone().sub(this.modelCenter);
+          const dist = dir.length();
+          if (dist < 0.05) {
+            // Center parts: go upward with slight random scatter
+            dir.set((Math.random() - 0.5) * 0.3, 0.6 + Math.random() * 0.4, (Math.random() - 0.5) * 0.3);
+            dir.normalize();
           } else {
             dir.normalize();
-            // Centerline bias — only the narrow spine (|X| < 0.30m) gets vertical emphasis
-            const absX = Math.abs(relX);
-            const centerlineBias = Math.max(0, 1 - absX / 0.30);
-            dir.y += centerlineBias * 2.0 * (relY >= 0 ? 1 : -1);
-            dir.x *= (1 - centerlineBias * 0.5);
-            dir.z *= (1 - centerlineBias * 0.5);
+            // Amplify vertical separation: parts above center go more up, below go more down
+            const verticalOffset = (center.y - this.modelCenter.y);
+            dir.y += verticalOffset * 1.5;
             dir.normalize();
           }
 
-          // Explosion distance — larger multiplier so nearby parts (tyre vs brake disc
-          // in the same corner) visibly separate. Far parts travel proportionally farther.
-          const maxDist = Math.max(0.8, rawDist * 2.3 + 0.8);
+          // Larger explosion range for better visual separation
+          const maxDist = Math.max(0.5, dist * 1.6 + 0.5);
 
           // Generate display name and description (use description from first mesh in group)
           const categoryZh = (CATEGORIES.find(c => c.id === group.category) || {}).labelZh || group.category;
@@ -1209,6 +1200,12 @@
           const specs = [CAR.name, 'F1 2026赛季规格', `所属系统: ${categoryZh}`];
 
           const id = `part-${idx++}`;
+
+          // Check for manual override
+          const override = CAR.explosionOverrides[zhName];
+          const explodedPos = override
+            ? center.clone().add(new THREE.Vector3(...override))
+            : center.clone().addScaledVector(dir, maxDist);
 
           const entry = {
             id,
@@ -1222,7 +1219,7 @@
             assembledPos: center.clone(),
             direction: dir,
             maxDist,
-            explodedPos: center.clone().addScaledVector(dir, maxDist),
+            explodedPos,
             currentFactor: 0,
             targetFactor: 0,
           };
