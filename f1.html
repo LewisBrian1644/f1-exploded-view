@@ -1245,6 +1245,25 @@
 
         console.log(`Extracted ${this.parts.length} part groups`);
 
+        // ── 诊断输出：各部件的几何中心坐标 ──
+        console.log('╔══════════════════════════════════════════════════════╗');
+        console.log(`║  Model Center: (${this.modelCenter.x.toFixed(4)}, ${this.modelCenter.y.toFixed(4)}, ${this.modelCenter.z.toFixed(4)})`);
+        console.log('╠══════════════════════════════════════════════════════╣');
+        console.log('║  Format: 部件名 | center.x, center.y, center.z');
+        console.log('║          | relX, relY, relZ  (relative to model center)');
+        console.log('║          | dir(dx,dy,dz) maxDist  (explosion vector)');
+        console.log('╠══════════════════════════════════════════════════════╣');
+        this.parts.forEach(p => {
+          const relX = p.center.x - this.modelCenter.x;
+          const relY = p.center.y - this.modelCenter.y;
+          const relZ = p.center.z - this.modelCenter.z;
+          console.log(`${p.zh}`);
+          console.log(`  center: (${p.center.x.toFixed(4)}, ${p.center.y.toFixed(4)}, ${p.center.z.toFixed(4)})`);
+          console.log(`  rel:    (${relX.toFixed(4)}, ${relY.toFixed(4)}, ${relZ.toFixed(4)})`);
+          console.log(`  dir:    (${p.direction.x.toFixed(2)}, ${p.direction.y.toFixed(2)}, ${p.direction.z.toFixed(2)})  maxDist: ${p.maxDist.toFixed(2)}`);
+        });
+        console.log('╚══════════════════════════════════════════════════════╝');
+
         return this.parts;
       }
 
