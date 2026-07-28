@@ -1083,7 +1083,17 @@
         console.log('Model size:', bbox.getSize(new THREE.Vector3()).toArray());
 
         // Collect all meshes with their FULL world transforms
+        // Also capture parent group name for diagnostics
         const meshes = [];
+
+        // Helper: find the top-level group name for a node
+        function findParentGroup(node, root) {
+          let p = node.parent;
+          while (p && p !== root && p.parent && p.parent !== root) {
+            p = p.parent;
+          }
+          return (p && p !== root) ? (p.name || '(unnamed)') : '(root)';
+        }
 
         model.traverse((child) => {
           if (child.isMesh && child.name) {
@@ -1091,6 +1101,8 @@
             const wq = new THREE.Quaternion();
             const ws = new THREE.Vector3();
             child.matrixWorld.decompose(wp, wq, ws);
+
+            const parentGroup = findParentGroup(child, model);
 
             let zhName, category, desc;
 
@@ -1108,7 +1120,7 @@
             meshes.push({
               mesh: child,
               name: child.name,
-              zhName: zhName,
+              parentGroup,
               category: category,
               desc: desc,
               worldPos: wp.clone(),
@@ -1245,24 +1257,20 @@
 
         console.log(`Extracted ${this.parts.length} part groups`);
 
-        // ── 诊断输出：各部件的几何中心坐标 ──
-        console.log('╔══════════════════════════════════════════════════════╗');
-        console.log(`║  Model Center: (${this.modelCenter.x.toFixed(4)}, ${this.modelCenter.y.toFixed(4)}, ${this.modelCenter.z.toFixed(4)})`);
-        console.log('╠══════════════════════════════════════════════════════╣');
-        console.log('║  Format: 部件名 | center.x, center.y, center.z');
-        console.log('║          | relX, relY, relZ  (relative to model center)');
-        console.log('║          | dir(dx,dy,dz) maxDist  (explosion vector)');
-        console.log('╠══════════════════════════════════════════════════════╣');
-        this.parts.forEach(p => {
-          const relX = p.center.x - this.modelCenter.x;
-          const relY = p.center.y - this.modelCenter.y;
-          const relZ = p.center.z - this.modelCenter.z;
-          console.log(`${p.zh}`);
-          console.log(`  center: (${p.center.x.toFixed(4)}, ${p.center.y.toFixed(4)}, ${p.center.z.toFixed(4)})`);
-          console.log(`  rel:    (${relX.toFixed(4)}, ${relY.toFixed(4)}, ${relZ.toFixed(4)})`);
-          console.log(`  dir:    (${p.direction.x.toFixed(2)}, ${p.direction.y.toFixed(2)}, ${p.direction.z.toFixed(2)})  maxDist: ${p.maxDist.toFixed(2)}`);
+        // ── 诊断输出：每个Object_# mesh及其父组和坐标 ──
+        console.log('=== MESH DIAGNOSTICS ===');
+        console.log(`Model Center: (${this.modelCenter.x.toFixed(4)}, ${this.modelCenter.y.toFixed(4)}, ${this.modelCenter.z.toFixed(4)})`);
+        console.log('');
+        console.log('MeshName           | ParentGroup          | center.x, center.y, center.z');
+        console.log('-------------------|----------------------|------------------------------');
+        // Show ALL individual meshes (before grouping)
+        meshes.sort((a, b) => a.parentGroup.localeCompare(b.parentGroup) || a.name.localeCompare(b.name));
+        meshes.forEach(m => {
+          const cx = m.worldPos.x.toFixed(4), cy = m.worldPos.y.toFixed(4), cz = m.worldPos.z.toFixed(4);
+          console.log(`${m.name.padEnd(19)} | ${m.parentGroup.padEnd(21)} | ${cx}, ${cy}, ${cz}`);
         });
-        console.log('╚══════════════════════════════════════════════════════╝');
+        console.log('=== END DIAGNOSTICS ===');
+        console.log(`Total meshes: ${meshes.length}, Grouped parts: ${this.parts.length}`);
 
         return this.parts;
       }
