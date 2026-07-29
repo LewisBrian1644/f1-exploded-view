@@ -655,214 +655,255 @@
       cameraTarget: [0, 0.2, 0.5],
       // 手动爆炸覆盖: { 部件中文名: [dx, dy, dz] } — 空对象表示全部用算法
       explosionOverrides: {},
+      // 爆炸倍率: 爆炸后坐标 = 爆炸前坐标 * explosionMagnification (相对CINTURE_OFF中心)
+      explosionMagnification: 5,
     };
 
     // ===== Object_# → 真实F1部件名称与描述 =====
     CAR.objectNames = {
-      // ── 后视镜 ──
-      'Object_0':  { zh: '右后视镜外壳',   cat: 'aero', desc: '碳纤维复合材料制成的流线型外壳，将空气阻力降至最低的同时保护内部镜片。后视镜在F1中不仅是视野工具，更是经过精密空气动力学优化的关键部件。' },
-      'Object_42': { zh: '左后视镜总成',   cat: 'aero', desc: '包含外壳、镜片和安装支架的完整后视镜总成。F1后视镜位置经过风洞验证，可产生有益的前方气流扰动，对前翼和侧箱气流有显著影响。' },
-      'Object_48': { zh: '后视镜支架',     cat: 'aero', desc: '将后视镜固定于单体壳侧面的碳纤维支架。支架的截面形状经过空气动力学优化，兼具导流作用，可引导气流绕过头盔侧面。' },
-      'Object_67': { zh: '后视镜镜片',     cat: 'aero', desc: '凸面防眩光镜片，为车手提供宽广的后方视野。镜片角度可通过电动调节，帮助车手在直道上观察后方对手并防守超车。' },
-      'Object_165':{ zh: '右后视镜总成',   cat: 'aero', desc: '右侧后视镜完整总成，与左侧对称设计。两侧后视镜总成在空气动力学上经过不对称调校以适应赛道不同弯道方向的视野需求。' },
+      // ── 安全带打开 ──
+      'Object_728': { zh: '安全带打开', cat: 'cockpit' },
+      'Object_732': { zh: '安全带打开', cat: 'cockpit' },
 
-      // ── 左前悬挂/刹车 ──
-      'Object_1':  { zh: '左前碳纤维刹车碟', cat: 'wheels', desc: '碳-碳复合材料制动碟盘，工作温度可达400-1000°C。F1刹车碟直径278mm、厚度32mm，表面有高达1400个通风孔用于散热，在5秒内可将赛车从300km/h减速至80km/h。' },
-      'Object_2':  { zh: '左前刹车碟内盘', cat: 'wheels', desc: '刹车碟的内侧摩擦面。刹车碟为通风式结构，内外盘之间有气道，利用离心力将高温空气从中心向外排出，确保极端制动工况下的热稳定性。' },
-      'Object_3':  { zh: '左前刹车卡钳',   cat: 'wheels', desc: '6活塞单体式液压卡钳，由铝合金精密加工而成。卡钳活塞以极高的液压压力将刹车片压向刹车碟，每个车轮的制动力由线控制动系统（BBW）独立精确控制。' },
-      'Object_4':  { zh: '左前卡钳安装支架', cat: 'wheels', desc: '将刹车卡钳刚性固定在转向节上的碳纤维支架。需承受超过5G的制动力矩，同时兼具导风罩功能，将冷却气流导向刹车碟。' },
-      'Object_5':  { zh: '左前轮毂',       cat: 'wheels', desc: '镁合金锻造轮毂，连接车轮轴承与轮辋。F1轮毂集成了轮胎气压和温度传感器、制动温度传感器，并通过空心轴传递动力和制动扭矩。' },
-      'Object_6':  { zh: '左前转向横拉杆', cat: 'suspension', desc: '连接转向齿条与转向节的拉杆，将方向盘的旋转运动转化为车轮的转向角。拉杆长度可调，用于设定前束角（Toe），直接影响入弯响应速度。' },
-      'Object_7':  { zh: '左前转向节',     cat: 'suspension', desc: '连接上下叉臂、推杆和转向拉杆的核心结构件。由高强度铝合金或钛合金制成，集合了轮毂轴承安装面、卡钳安装点和所有悬挂连接点。' },
-      'Object_8':  { zh: '左前推杆',       cat: 'suspension', desc: '连接转向节与底盘摇臂（Rocker）的碳纤维推杆。推杆将车轮的垂直运动传递给车内安装的扭杆弹簧和减震器，使得非簧载质量最小化。' },
-      'Object_9':  { zh: '左前防倾杆连杆', cat: 'suspension', desc: '连接悬挂摇臂与防倾杆的连接杆。防倾杆在车辆侧倾时产生扭转弹力，抵抗车身侧倾，调整前后防倾杆刚度配比可精细调控赛车过弯平衡。' },
-      'Object_40': { zh: '左前下前叉臂',   cat: 'suspension', desc: '前悬挂下方的叉形连杆前支臂。由碳纤维复合材料制成，一端连接底盘、另一端连接转向节。F1采用双叉臂（Double Wishbone）悬挂布局，上下叉臂共同定义车轮运动轨迹。' },
-      'Object_41': { zh: '左前下后叉臂',   cat: 'suspension', desc: '前悬挂下方的叉形连杆后支臂。与前支臂共同构成下叉臂组件，承受制动和加速时的纵向力。两臂角度差异形成抗俯仰几何（Anti-dive Geometry）。' },
-      'Object_163':{ zh: '左前上叉臂',     cat: 'suspension', desc: '前悬挂上方叉臂，由碳纤维预浸布在高压釜中固化成型。上叉臂的安装角度定义了前轮外倾角变化曲线（Camber Curve），是决定轮胎接地特性的关键参数。' },
-      'Object_164':{ zh: '左前上叉臂后支', cat: 'suspension', desc: '上叉臂的后部连接臂。所有叉臂连接点均采用球形轴承（Spherical Bearing），消除摩擦和弹性变形，确保悬挂运动的精确性和可重复性。' },
+      // ── 安全带关闭 ──
+      'Object_684': { zh: '安全带关闭', cat: 'cockpit' },
+      'Object_688': { zh: '安全带关闭', cat: 'cockpit' },
+      'Object_692': { zh: '安全带关闭', cat: 'cockpit' },
+      'Object_696': { zh: '安全带关闭', cat: 'cockpit' },
+      'Object_700': { zh: '安全带关闭', cat: 'cockpit' },
+      'Object_704': { zh: '安全带关闭', cat: 'cockpit' },
 
-      // ── 右前悬挂/刹车 ──
-      'Object_14': { zh: '右前上叉臂',     cat: 'suspension', desc: '与左侧对称的右前上叉臂结构。F1赛车左右悬挂设定通常存在不对称调校，以适应赛道弯道分布的不均等性。' },
-      'Object_15': { zh: '右前上叉臂后支', cat: 'suspension', desc: '右前上叉臂的后部支撑臂。后支臂的长度和角度影响主销后倾角（Caster Angle），更大的后倾角提供更重的转向手感和更好的高速直线稳定性。' },
-      'Object_17': { zh: '右前下前叉臂',   cat: 'suspension', desc: '右前下叉臂的前支臂。下叉臂承受赛车通过 bumps 和 curbs 时的大部分冲击载荷，是悬挂系统中受力最大的部件之一。' },
-      'Object_18': { zh: '右前下后叉臂',   cat: 'suspension', desc: '右前下叉臂的后支臂。后支臂较前支臂更长，这种不对称设计在制动时产生前束增加（Toe-in）效应，提高制动稳定性。' },
-      'Object_53': { zh: '右前推杆',       cat: 'suspension', desc: '碳纤维推杆，在F1的前推杆布局中承受压力。推杆将轮上运动传递至底盘内部的摇臂-扭杆-减震器总成，这种布置使空气动力学表面不受悬挂组件干扰。' },
-      'Object_54': { zh: '右前防倾杆连杆', cat: 'suspension', desc: '右前防倾杆连接杆。防倾杆（Anti-roll Bar）通过扭转刚度抵抗车身侧倾，车手可在比赛中通过方向盘拨片分级调节前后防倾杆刚度，适应燃油消耗带来的重量变化。' },
-      'Object_168':{ zh: '右前碳纤维刹车碟', cat: 'wheels', desc: '右前刹车碟。F1前轮承担约60%的制动力，前刹车碟比后轮更厚更大以应对更高的热负荷。每个刹车碟价值约€5000，使用寿命约800-1000km。' },
-      'Object_169':{ zh: '右前刹车碟内盘', cat: 'wheels', desc: '刹车碟的内侧通风盘。碳-碳刹车在低温时性能急剧下降，暖胎圈中车手通过频繁轻刹将刹车温度提升至200°C以上的工作窗口。' },
-      'Object_170':{ zh: '右前刹车卡钳',   cat: 'wheels', desc: '铝合金单体式6活塞卡钳。2026年规则引入线控制动（Brake-by-Wire）系统，后轮制动力由ECU根据动能回收状态动态分配，前轮仍保持液压制动为主。' },
-      'Object_171':{ zh: '右前卡钳安装支架', cat: 'wheels', desc: '碳纤维卡钳支架。除固定卡钳外，支架还设计了专门的导风通道，将从刹车通风管引入的冷却空气精确导向刹车碟中心。' },
-      'Object_172':{ zh: '右前轮毂',       cat: 'wheels', desc: '镁合金轮毂。F1 2026年使用18英寸轮辋，轮毂集成了TPMS胎压传感器和红外温度传感器阵列，实时监测轮胎工作状态。' },
-      'Object_173':{ zh: '右前转向横拉杆', cat: 'suspension', desc: '转向横拉杆。F1转向系统为纯机械液压助力，拉杆端部采用航空级球轴承，消除间隙，确保车手对前轮抓地力极限的精确感知。' },
-      'Object_174':{ zh: '右前转向节',     cat: 'suspension', desc: '高强度铝合金转向节。除机械连接功能外，转向节内部加工有复杂的冷却风道，将刹车碟辐射的热量通过轮辋排出。' },
+      // ── 单体壳 ──
+      'Object_231': { zh: '单体壳', cat: 'chassis' },
 
-      // ── 左后悬挂/刹车 ──
-      'Object_43': { zh: '左后碳纤维刹车碟', cat: 'wheels', desc: '后轮刹车碟，直径较前轮略小。后轮制动由线控制动系统管理，ECU根据MGU-K的动能回收功率实时调节后轮液压制动比例，实现能量回收效率最大化。' },
-      'Object_44': { zh: '左后刹车碟内盘', cat: 'wheels', desc: '后刹车碟内侧通风盘。后刹车工作温度通常比前刹车低100-200°C，因为后轮承担较少制动载荷，且部分制动能量被MGU-K吸收转化为电能。' },
-      'Object_45': { zh: '左后卡钳与轮毂总成', cat: 'wheels', desc: '后刹车卡钳与轮毂的集成总成。后卡钳通常为4活塞设计。轮毂通过空心半轴与差速器连接，半轴内部穿过驱动轴，外部轴承支撑车轮旋转。' },
+      // ── 单体壳+底板 ──
+      'Object_72': { zh: '单体壳+底板', cat: 'chassis' },
+      'Object_76': { zh: '单体壳+底板', cat: 'chassis' },
 
-      // ── 右后悬挂/刹车 ──
-      'Object_152':{ zh: '右后碳纤维刹车碟', cat: 'wheels', desc: '右后刹车碟。四轮碳-碳刹车系统在材料配方上前后不同，前碟偏重制动力峰值，后碟偏重线性可控性和热稳定性。' },
-      'Object_153':{ zh: '右后刹车碟内盘', cat: 'wheels', desc: '右后刹车碟内盘。F1刹车系统的散热设计极其精密，每个刹车碟有专属的碳纤维导风管，将侧箱进气口收集的冷空气精确导向刹车中心。' },
-      'Object_154':{ zh: '右后卡钳与轮毂总成', cat: 'wheels', desc: '右后卡钳与轮毂总成。后轮总成集成了线控制动的液压执行器，ECU每秒数百次调节后轮制动力分配，确保在动能回收状态下制动力矩平稳过渡。' },
+      // ── 挡风玻璃 ──
+      'Object_326': { zh: '挡风玻璃', cat: 'cockpit' },
+      'Object_679': { zh: '挡风玻璃', cat: 'cockpit' },
 
-      // ── 后悬挂组件 ──
-      'Object_23': { zh: '后悬挂下叉臂前支', cat: 'suspension', desc: '后悬挂下方叉臂的前端连接臂。后悬挂采用多连杆布局（Multilink），通过多个独立连杆精确控制车轮的外倾角、前束角和纵向位置。' },
-      'Object_24': { zh: '后悬挂下叉臂后支', cat: 'suspension', desc: '后悬挂下方叉臂的后端连接臂。后悬挂连杆的几何布置决定了后轮在加速和制动时的动态前束变化（Compliance Toe），对出弯牵引力有直接影响。' },
-      'Object_25': { zh: '后悬挂上叉臂前支', cat: 'suspension', desc: '后悬挂上方叉臂的前端连接臂。上叉臂的角度控制后轮外倾角曲线，F1赛车后轮通常设定为较大负外倾角以最大化侧向抓地力。' },
-      'Object_26': { zh: '后悬挂上叉臂后支', cat: 'suspension', desc: '后悬挂上方叉臂的后端连接臂。碳纤维叉臂每一层的纤维取向都经过有限元分析优化，以实现特定方向的刚度和强度需求。' },
-      'Object_27': { zh: '后悬挂主拉杆（左）', cat: 'suspension', desc: '连接后轮摇臂与底盘的拉杆（Pull Rod），在F1的后拉杆布局中承受拉力。拉杆/推杆的选择影响悬挂运动学、重心高度和空气动力学空间利用率。' },
-      'Object_28': { zh: '后悬挂束角连杆（左）', cat: 'suspension', desc: '控制后轮前束角（Toe）的专用连杆。通过调整连杆长度设定后轮前束，通常设定为前束正（Toe-in）以提高加速时的后轴稳定性。' },
-      'Object_55': { zh: '后悬挂弹簧摇臂（左）', cat: 'suspension', desc: '将拉杆的线性运动转换为扭杆弹簧扭转运动的摇臂机构（Rocker/Bellcrank）。摇臂的几何轮廓决定悬挂的上升率（Motion Ratio），即车轮行程与弹簧压缩量的非线性关系。' },
-      'Object_56': { zh: '后悬挂减震器（左）', cat: 'suspension', desc: '液压旋转式减震器。F1减震器通过精密的阀门系统控制压缩和回弹阻尼，低速和高速阻尼独立可调，车手可通过方向盘旋钮在比赛中实时切换阻尼模式。' },
-      'Object_57': { zh: '后悬挂第三弹簧',   cat: 'suspension', desc: '连接两侧摇臂的横向弹簧元件（Heave Spring / Third Element）。第三弹簧只对车身起伏运动（Heave）产生作用，不影响侧倾刚度，允许工程师独立调校行驶高度控制和侧倾特性。' },
-      'Object_58': { zh: '后悬挂防倾杆（左）', cat: 'suspension', desc: '后防倾杆通过扭转弹力抵抗车身侧倾。2026年规则允许更复杂的液压互联悬挂系统，防倾杆刚度可根据弯道类型和燃油载荷实时调节。' },
-      'Object_59': { zh: '后悬挂主拉杆（右）', cat: 'suspension', desc: '右侧后悬挂拉杆，与左侧对称布局。两侧拉杆将车轮的垂直运动分别传递给独立的摇臂机构，左右悬挂运动通过防倾杆和第三弹簧实现耦合。' },
-      'Object_60': { zh: '后悬挂束角连杆（右）', cat: 'suspension', desc: '右侧束角控制连杆。左右后轮前束角的微小差异可用于补偿轮胎在长弯道中的不均匀磨损，尤其在顺时针为主的赛道上左右设定往往不对称。' },
+      // ── 方向盘 ──
+      'Object_331': { zh: '方向盘', cat: 'elec' },
+      'Object_335': { zh: '方向盘', cat: 'elec' },
+      'Object_339': { zh: '方向盘', cat: 'elec' },
+      'Object_343': { zh: '方向盘', cat: 'elec' },
+      'Object_347': { zh: '方向盘', cat: 'elec' },
+      'Object_351': { zh: '方向盘', cat: 'elec' },
+      'Object_355': { zh: '方向盘', cat: 'elec' },
+      'Object_359': { zh: '方向盘', cat: 'elec' },
+      'Object_363': { zh: '方向盘', cat: 'elec' },
+      'Object_367': { zh: '方向盘', cat: 'elec' },
+      'Object_371': { zh: '方向盘', cat: 'elec' },
+      'Object_375': { zh: '方向盘', cat: 'elec' },
+      'Object_379': { zh: '方向盘', cat: 'elec' },
+      'Object_383': { zh: '方向盘', cat: 'elec' },
+      'Object_387': { zh: '方向盘', cat: 'elec' },
+      'Object_391': { zh: '方向盘', cat: 'elec' },
+      'Object_395': { zh: '方向盘', cat: 'elec' },
+      'Object_399': { zh: '方向盘', cat: 'elec' },
+      'Object_403': { zh: '方向盘', cat: 'elec' },
+      'Object_407': { zh: '方向盘', cat: 'elec' },
+      'Object_411': { zh: '方向盘', cat: 'elec' },
+      'Object_415': { zh: '方向盘', cat: 'elec' },
+      'Object_419': { zh: '方向盘', cat: 'elec' },
+      'Object_423': { zh: '方向盘', cat: 'elec' },
+      'Object_427': { zh: '方向盘', cat: 'elec' },
+      'Object_431': { zh: '方向盘', cat: 'elec' },
+      'Object_435': { zh: '方向盘', cat: 'elec' },
+      'Object_439': { zh: '方向盘', cat: 'elec' },
+      'Object_443': { zh: '方向盘', cat: 'elec' },
+      'Object_447': { zh: '方向盘', cat: 'elec' },
+      'Object_451': { zh: '方向盘', cat: 'elec' },
+      'Object_455': { zh: '方向盘', cat: 'elec' },
+      'Object_459': { zh: '方向盘', cat: 'elec' },
+      'Object_463': { zh: '方向盘', cat: 'elec' },
+      'Object_467': { zh: '方向盘', cat: 'elec' },
+      'Object_471': { zh: '方向盘', cat: 'elec' },
+      'Object_475': { zh: '方向盘', cat: 'elec' },
+      'Object_479': { zh: '方向盘', cat: 'elec' },
+      'Object_483': { zh: '方向盘', cat: 'elec' },
+      'Object_487': { zh: '方向盘', cat: 'elec' },
+      'Object_491': { zh: '方向盘', cat: 'elec' },
+      'Object_495': { zh: '方向盘', cat: 'elec' },
+      'Object_499': { zh: '方向盘', cat: 'elec' },
+      'Object_503': { zh: '方向盘', cat: 'elec' },
+      'Object_507': { zh: '方向盘', cat: 'elec' },
+      'Object_511': { zh: '方向盘', cat: 'elec' },
+      'Object_515': { zh: '方向盘', cat: 'elec' },
+      'Object_519': { zh: '方向盘', cat: 'elec' },
+      'Object_523': { zh: '方向盘', cat: 'elec' },
+      'Object_527': { zh: '方向盘', cat: 'elec' },
+      'Object_531': { zh: '方向盘', cat: 'elec' },
+      'Object_535': { zh: '方向盘', cat: 'elec' },
+      'Object_539': { zh: '方向盘', cat: 'elec' },
+      'Object_543': { zh: '方向盘', cat: 'elec' },
+      'Object_547': { zh: '方向盘', cat: 'elec' },
+      'Object_551': { zh: '方向盘', cat: 'elec' },
+      'Object_555': { zh: '方向盘', cat: 'elec' },
+      'Object_559': { zh: '方向盘', cat: 'elec' },
+      'Object_563': { zh: '方向盘', cat: 'elec' },
+      'Object_567': { zh: '方向盘', cat: 'elec' },
+      'Object_571': { zh: '方向盘', cat: 'elec' },
+      'Object_575': { zh: '方向盘', cat: 'elec' },
+      'Object_579': { zh: '方向盘', cat: 'elec' },
+      'Object_583': { zh: '方向盘', cat: 'elec' },
+      'Object_587': { zh: '方向盘', cat: 'elec' },
+      'Object_591': { zh: '方向盘', cat: 'elec' },
+      'Object_595': { zh: '方向盘', cat: 'elec' },
+      'Object_599': { zh: '方向盘', cat: 'elec' },
+      'Object_603': { zh: '方向盘', cat: 'elec' },
+      'Object_607': { zh: '方向盘', cat: 'elec' },
+      'Object_611': { zh: '方向盘', cat: 'elec' },
+      'Object_615': { zh: '方向盘', cat: 'elec' },
+      'Object_619': { zh: '方向盘', cat: 'elec' },
+      'Object_623': { zh: '方向盘', cat: 'elec' },
+      'Object_627': { zh: '方向盘', cat: 'elec' },
+      'Object_631': { zh: '方向盘', cat: 'elec' },
+      'Object_635': { zh: '方向盘', cat: 'elec' },
+      'Object_639': { zh: '方向盘', cat: 'elec' },
 
-      // ── 轮胎 (4条，每条分为胎面和胎壁两个mesh) ──
-      'Object_20': { zh: '右前轮胎侧壁',   cat: 'wheels', desc: 'Pirelli P Zero F1轮胎的侧壁（Sidewall）部分，标有轮胎配方颜色标识。侧壁的刚度和变形特性对轮胎接地印迹（Contact Patch）的形状和大小有关键影响。F1轮胎在5G横向加速度下仍能保持抓地力。' },
-      'Object_21': { zh: '右前轮胎胎面',   cat: 'wheels', desc: 'Pirelli F1轮胎的胎面（Tread）部分，2026年起使用18英寸规格。胎面配方从C0（最硬）到C5（最软）共6种，每条赛道Pirelli指定3种配方供车队选择。胎面工作温度窗口约80-120°C。' },
-      'Object_31': { zh: '左前轮胎侧壁',   cat: 'wheels', desc: '左前轮胎侧壁。在大多数顺时针赛道上，左前轮承受最大的载荷和磨损。轮胎侧壁在弯道中承受巨大侧向力时发生可控变形，维持最佳接地面积。' },
-      'Object_32': { zh: '左前轮胎胎面',   cat: 'wheels', desc: '左前轮胎胎面。前轮胎面宽度约305mm（2026规格）。胎面花纹极浅（光头胎），在干燥条件下最大化与赛道表面的分子级接触面积，产生超过2吨的下压力抓地力。' },
-      'Object_50': { zh: '右后轮胎侧壁',   cat: 'wheels', desc: '右后轮胎侧壁。后轮规格为18英寸，胎面比前轮更宽以承受加速牵引力和动力输出。后轮胎在出弯时需要承受超过1000hp的动力冲击。' },
-      'Object_51': { zh: '右后轮胎胎面',   cat: 'wheels', desc: '右后轮胎胎面。后轮胎面宽度约405mm。F1轮胎从制造到赛道使用全程温控，轮胎加热毯将轮胎预热至约80-100°C（前轮）和80°C（后轮）以确保出站即进入工作窗口。' },
-      'Object_64': { zh: '左后轮胎侧壁',   cat: 'wheels', desc: '左后轮胎侧壁。2026年Pirelli轮胎采用全新的结构和配方以匹配新一代赛车增大的扭矩输出和降低的下压力水平。' },
-      'Object_65': { zh: '左后轮胎胎面',   cat: 'wheels', desc: '左后轮胎胎面。每套轮胎在前轮约承受400kg、后轮约480kg的静态载荷，在高速弯道中由于下压力作用，动态载荷可超过1吨。一套软胎的排位赛寿命仅约15-30km。' },
+      // ── 后视镜框 ──
+      'Object_241': { zh: '后视镜框', cat: 'aero' },
 
-      // ── 轮辋 (4个) ──
-      'Object_22': { zh: '右前轮辋',       cat: 'wheels', desc: '镁合金锻造18英寸轮辋。2026年F1引入标准轮辋罩（Wheel Cover），用于管理轮胎尾流并减少乱流对后车的影响。轮辋通过中心锁紧螺母（Wheel Nut）固定在轮毂上。' },
-      'Object_33': { zh: '左前轮辋',       cat: 'wheels', desc: '镁合金前轮辋。F1轮辋重量仅约3-4kg，但可承受超过5吨的径向载荷。轮辋内侧装有气压和温度传感器，数据通过无线遥测实时传输至Pit Wall。' },
-      'Object_52': { zh: '右后轮辋',       cat: 'wheels', desc: '镁合金后轮辋，宽度比前轮辋更宽以匹配405mm后轮胎面。轮辋的轮圈设计影响轮胎胎壁的空气动力学行为，2026年轮辋罩进一步优化了这一区域的气流。' },
-      'Object_66': { zh: '左后轮辋',       cat: 'wheels', desc: '镁合金后轮辋。进站换胎时，气动扳手以超过2000Nm的扭矩松开中心锁紧螺母，仅需约2秒即可完成一个车轮的拆卸。轮辋上的定位销确保安装时角度精确对齐。' },
+      // ── 后视镜支架1 ──
+      'Object_236': { zh: '后视镜支架1', cat: 'aero' },
 
-      // ── 座舱 / 单体壳 ──
-      'Object_16': { zh: '座舱内衬',       cat: 'cockpit', desc: '座舱内部的碳纤维/芳纶复合材料内衬，为车手提供舒适的乘坐表面。内衬设计有通风通道，引导冷却空气在车手身体周围流动，在高达50°C的座舱环境中维持可承受的体温。' },
-      'Object_19': { zh: '座舱开口边框',   cat: 'cockpit', desc: '座舱开口（Cockpit Opening）周围的加强边框。这是车手进出的开口，也是安全规则极为严格的区域——开口尺寸必须确保车手能够在5秒内完成紧急撤离。' },
-      'Object_30': { zh: '座舱加强框架',   cat: 'cockpit', desc: '钛合金/高强度铝合金座舱加强框架结构。在单体壳内部形成环状保护结构，增强座舱开口周围的刚度，防止侧向撞击时座舱变形侵入车手空间。' },
-      'Object_34': { zh: '单体壳座舱段外壳', cat: 'chassis', desc: '单体壳（Monocoque）的座舱段碳纤维外壳。单体壳是F1赛车的核心安全结构，由超过12层碳纤维预浸布在不同方向上精确铺设，在高压釜中高温固化成型，形成一只完整的"生存舱"。' },
-      'Object_63': { zh: '座舱防火泡棉',   cat: 'cockpit', desc: 'Nomex®防火泡棉，填充在车手身体周围，兼具能量吸收和防火隔热功能。Nomex材料在800°C火焰中不熔化、不滴落，为车手在火灾事故中提供关键的额外逃生时间。' },
-      'Object_149':{ zh: '单体壳主体结构', cat: 'chassis', desc: '碳纤维单体壳（Monocoque / Survival Cell）主体。这是F1赛车最核心的安全部件，由碳纤维和蜂窝铝芯材复合而成，可承受超过250kN的静态挤压载荷和超过50G的冲击加速度。单体壳通过了FIA严格的碰撞测试认证。' },
-      'Object_150':{ zh: '车手头枕',       cat: 'cockpit', desc: '能量吸收头枕，包围在车手头部两侧。由Confor®泡沫或类似粘弹性材料制成，在冲击中吸收头部侧向加速度。头枕的形状设计为在碰撞中引导头盔进入Halo与单体壳之间的安全空间。' },
-      'Object_162':{ zh: '单体壳内壁结构', cat: 'chassis', desc: '单体壳内部碳纤维结构层。内层整合了踏板安装座、方向盘转向柱安装点和座椅固定轨道。单体壳的制造公差控制在±0.1mm内，每个单体壳的生产周期超过400小时。' },
+      // ── 后视镜支架2 ──
+      'Object_322': { zh: '后视镜支架2', cat: 'aero' },
 
-      // ── 安全带 ──
-      'Object_156':{ zh: '肩部安全带（左）', cat: 'cockpit', desc: '六点式安全带的左肩带，由聚酯纤维织带制成，宽度76mm。肩带从车手肩部向下延伸至单体壳后部的固定点。F1安全带可承受超过2000kg的瞬时拉力载荷。' },
-      'Object_157':{ zh: '肩部安全带（右）', cat: 'cockpit', desc: '六点式安全带的右肩带。肩带上装有角度调节扣，确保在碰撞中载荷以正确的角度分布在车手锁骨和肋骨上，避免软组织损伤。' },
-      'Object_158':{ zh: '腰部安全带（左）', cat: 'cockpit', desc: '六点式安全带的左腰带。腰带将车手骨盆牢牢固定在座椅中，防止在正面碰撞中车手从安全带下方滑出（Submarining效应）。' },
-      'Object_159':{ zh: '腰部安全带（右）', cat: 'cockpit', desc: '六点式安全带的右腰带。所有安全带通过快速释放机构（Quick Release）连接到同一个中心锁扣，车手单手即可在0.3秒内完全释放所有六条安全带。' },
-      'Object_160':{ zh: '胯部安全带（左）', cat: 'cockpit', desc: '六点式安全带的左胯带，从大腿之间穿过连接至单体壳底部。胯带是防潜水（Anti-submarining）设计的关键，确保车手在正面碰撞中不会滑动到安全带下方。' },
-      'Object_161':{ zh: '胯部安全带（右）', cat: 'cockpit', desc: '六点式安全带的右胯带。FIA规定F1安全带必须每两年更换一次，每次碰撞后强制报废，确保织带材料性能不受老化和疲劳影响。' },
-      'Object_166':{ zh: '安全带肩带扣紧态', cat: 'cockpit', desc: '肩带在锁紧状态下的展示。肩带的张紧力经过精确设定，既保证安全又不过度压迫车手锁骨。在长时间比赛中，过紧的肩带会严重影响车手呼吸和耐力表现。' },
-      'Object_167':{ zh: '安全带肩带开放态', cat: 'cockpit', desc: '肩带在释放状态下的展示。快速释放机构采用航空级铝合金加工，内置双重锁定机制防止意外释放。释放机构的操作力设计为单手可操作但不会因振动误触。' },
+      // ── 后引擎盖 ──
+      'Object_149': { zh: '后引擎盖', cat: 'chassis' },
 
-      // ── 挡风玻璃 / 光学面板 ──
-      'Object_68': { zh: '前光学面板',     cat: 'cockpit', desc: '安装在车手前方、方向盘上方的透明聚碳酸酯光学面板。不是传统意义的"挡风玻璃"，主要用于偏转前方来流以减少头盔承受的风压（Buffeting），而非提供视野。面板表面有疏水涂层确保雨天视野。' },
-      'Object_155':{ zh: '侧光学面板',     cat: 'cockpit', desc: '座舱开口两侧的透明导流面板。引导气流平滑经过座舱开口，减少气流吹入座舱造成的阻力。在高速下，座舱内的湍流空气会对车手头盔产生剧烈振动，影响视线和舒适度。' },
+      // ── 空气动力学套件 ──
+      'Object_185': { zh: '空气动力学套件', cat: 'aero' },
 
-      // ── 方向盘总成 ──
-      'Object_69': { zh: '方向盘蓝色信息灯', cat: 'elec', desc: '方向盘上方的蓝色LED指示灯。蓝色灯光通常用于指示特定系统状态——如DRS可用区间提醒、维修区限速器激活状态或ERS电池充足电提示。' },
-      'Object_128':{ zh: '方向盘红色警报灯', cat: 'elec', desc: '方向盘上的红色LED警报灯组。当动力单元、ERS系统或液压系统出现故障时闪烁红色，是车手接收紧急信息的最快速通道。红灯亮起时车手必须立即根据故障严重程度采取相应措施。' },
-      'Object_129':{ zh: '方向盘黄色警示灯', cat: 'elec', desc: '方向盘上的黄色LED警示灯。通常用于指示非紧急但需要关注的信息——如轮胎温度过高、刹车温度接近临界值或燃油余量不足。黄灯允许车手在圈内调整驾驶方式而非立即进站。' },
-      'Object_130':{ zh: '方向盘LCD显示屏', cat: 'elec', desc: '集成在方向盘中央的4.3英寸全彩LCD显示屏。显示多达40页可切换信息，包括：圈速差、ERS电量、轮胎温度（四轮独立）、刹车平衡设定、差速器设定、引擎模式、故障代码和策略信息。' },
-      'Object_131':{ zh: '方向盘主体框架', cat: 'elec', desc: '碳纤维复合材料方向盘主体框架。重量仅约1.3-1.6kg。方向盘是快拆式设计，通过花键轴与转向柱连接，车手进出座舱时必须取下方向盘。内部集成多达25个按钮、6个旋钮和3组拨片。' },
-      'Object_132':{ zh: '方向盘前壳面板', cat: 'elec', desc: '方向盘前壳的面板组件。面板由碳纤维精密加工而成，容纳所有按钮、旋钮和显示屏的安装座。面板表面有防滑哑光处理，避免阳光在显示屏上产生眩光。' },
-      'Object_133':{ zh: '方向盘后壳面板', cat: 'elec', desc: '方向盘后部的壳体面板。后壳内安装有换挡拨片的机械结构和电子控制PCB板。所有电路连接通过方向盘底部的军用规格多针连接器（Multi-pin Connector）与赛车主线束连接。' },
-      'Object_134':{ zh: '方向盘侧面摇杆面板', cat: 'elec', desc: '方向盘侧面的操控面板区域。容纳多功能旋转开关（Rotary Switches），每个旋钮有10-16个位置，控制从差速器设定到刹车平衡的多种参数。' },
-      'Object_135':{ zh: '方向盘拨片安装面板', cat: 'elec', desc: '方向盘握把后方的拨片安装面板。安装3组碳纤维拨片：左侧下方为离合器拨片（仅起步使用）、左右上方为换挡拨片（右侧升档/左侧降档）、中央可选DRS或超车模式拨片。' },
-      'Object_136':{ zh: '方向盘握把覆盖面板', cat: 'elec', desc: '方向盘握把外侧的碳纤维覆盖面板。握把位置精确成型以匹配每位车手的手形，外部包裹高性能硅胶防滑材料，即使在佩戴手套和出汗时也能保持可靠握持。' },
-      'Object_137':{ zh: '方向盘底部面板', cat: 'elec', desc: '方向盘下方的封闭面板。方向盘中央的快拆花键座（Quick Release Hub）穿过此面板与转向柱啮合，花键采用零间隙设计确保精确的转向传递。' },
-      'Object_138':{ zh: '方向盘旋钮标牌A', cat: 'elec', desc: '方向盘上的功能旋钮标牌，标注旋钮各位置对应的功能（如ENT = 引擎模式、BR- = 刹车平衡后移）。标牌使用激光蚀刻工艺在铝合金薄片上制作，确保在剧烈振动和强光下始终可读。' },
-      'Object_139':{ zh: '方向盘旋钮标牌B', cat: 'elec', desc: '第二组功能标牌。方向盘上的每个旋钮和按钮都根据车手个人偏好和人体工学进行了定制排布，车手可以盲操作所有控制而无需低头查看。' },
-      'Object_140':{ zh: '方向盘按钮标牌A', cat: 'elec', desc: '方向盘按钮的功能标识牌。按钮标签通常为缩写：PIT = 维修区限速器、RAD = 无线电、DRS = 尾翼开启、OT = 超车模式（增加ERS输出）等。' },
-      'Object_141':{ zh: '方向盘按钮标牌B', cat: 'elec', desc: '第二组按钮标牌。标牌颜色与功能类别对应：红色为紧急/关键功能、黄色为ERS/动力模式、蓝色为通讯/确认功能、白色为信息翻页/次要功能。这种颜色编码减少车手在极端压力下的操作失误。' },
-      'Object_142':{ zh: '方向盘菜单导航标牌', cat: 'elec', desc: 'LCD显示屏菜单系统的导航按钮标牌。车手通过方向盘上的方向键和确认键浏览复杂的显示菜单，可以实时切换查看不同系统状态页面。' },
-      'Object_143':{ zh: '方向盘主开关标牌', cat: 'elec', desc: '方向盘主功能开关的标识牌，包含引擎熄火开关（Engine Kill）和ERS紧急断电开关。这些安全关键开关必须易于快速触及且操作无误，通常设计为凹陷式按钮防止误触。' },
-      'Object_144':{ zh: 'DRS激活状态指示灯', cat: 'elec', desc: 'DRS（Drag Reduction System，减阻系统）激活时的绿色状态灯。当车手按下DRS按钮且赛车处于DRS检测区1秒内跟随前车时，指示灯亮起确认尾翼上襟翼已开启。DRS开启时尾翼阻力减少约15-20%，可带来约10-15km/h的额外直道尾速。' },
-      'Object_145':{ zh: 'DRS可用预亮指示灯', cat: 'elec', desc: 'DRS系统可用的黄色预警指示灯。当赛车进入DRS检测点且满足跟随距离要求（1秒以内）时，预亮灯亮起告知车手可以在DRS激活区使用该系统。车手必须在正确的位置才能激活DRS。' },
-      'Object_146':{ zh: '方向盘预留按钮盖板', cat: 'elec', desc: '方向盘上未使用的按钮位置的空白盖板。F1方向盘设计预留了扩展接口，不同赛道可能根据需求添加额外功能。盖板确保未用电接口不受灰尘、湿气和电磁干扰的影响。' },
+      // ── 排气管 ──
+      'Object_709': { zh: '排气管', cat: 'powerunit' },
 
-      // ── 换挡指示灯 (LED Shift Light Bar) ──
-      'Object_70':  { zh: '换挡指示灯',     cat: 'elec', desc: '方向盘上方的RPM换挡指示灯条（Shift Light Bar）的LED灯珠。从左到右排列的LED显示当前发动机转速相对于最佳换挡点的位置：绿色→黄色→红色→蓝色闪烁（提示升档）。当所有灯同时闪烁蓝色时，表示已达到最佳升挡转速（约12000rpm），车手应立即拉动升挡拨片。' },
-      'Object_71':  { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_72':  { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_73':  { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_74':  { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_75':  { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_76':  { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_77':  { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_78':  { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_79':  { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_80':  { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_81':  { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_82':  { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_83':  { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_84':  { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_85':  { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_86':  { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_87':  { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_88':  { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_89':  { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_90':  { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_91':  { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_92':  { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_93':  { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_94':  { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_95':  { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_96':  { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_97':  { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_98':  { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_99':  { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_100': { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_101': { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_102': { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_103': { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_104': { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_105': { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_106': { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_107': { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_108': { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_109': { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_110': { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_111': { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_112': { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_113': { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_114': { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_115': { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_116': { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_117': { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_118': { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_119': { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_120': { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_121': { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_122': { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_123': { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_124': { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_125': { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_126': { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
-      'Object_127': { zh: '换挡指示灯',     cat: 'elec', desc: '换挡指示灯条的LED灯珠。' },
+      // ── 前翼 ──
+      'Object_227': { zh: '前翼', cat: 'aero' },
+      'Object_295': { zh: '前翼', cat: 'aero' },
+      'Object_300': { zh: '前翼', cat: 'aero' },
+      'Object_661': { zh: '前翼', cat: 'aero' },
 
-      // ── 灯光系统 ──
-      'Object_35': { zh: '前部雨天灯',     cat: 'elec', desc: '安装在前翼端板或鼻锥前缘的高亮度LED雨天信号灯。根据FIA规则，在雨天条件下必须开启以增加赛车前部的可见度。灯光亮度经过精确校调，确保后方车手能清楚判断前车位置。' },
-      'Object_36': { zh: '后部雨天灯/尾灯', cat: 'elec', desc: '安装在尾翼中央或扩散器上方的高亮度LED尾灯。在雨天条件下持续闪烁以警示后车。在ERS充电模式下（无制动灯），此灯也用于提示后车前车正在回收能量、可能减速。' },
-      'Object_148':{ zh: '侧面雨天灯',     cat: 'elec', desc: '安装在侧箱或Halo上的辅助雨天信号灯。在极度恶劣天气如能见度极低的大雨中，多角度灯光系统确保赛车从任何方向都能被其他车手看到。FIA对雨天灯的位置、亮度和闪烁频率有严格的技术规定。' },
+      // ── 散热口支架 ──
+      'Object_13': { zh: '散热口支架', cat: 'chassis' },
 
-      // ── 车身面板 / 空气动力学 ──
-      'Object_10': { zh: '前部底板',       cat: 'aero', desc: '底板（Floor）的前段部分，位于前轮轴线之前。底板前缘（Floor Leading Edge）的设计决定了进入车底气流的速度和质量——即使1mm的离地间隙变化都能显著影响地面效应（Ground Effect）的下压力产出。' },
-      'Object_11': { zh: '尾翼DRS上襟翼', cat: 'aero', desc: '尾翼上方的活动襟翼，是DRS（Drag Reduction System）的核心部件。当DRS激活时，襟翼绕轴旋转打开至水平角度，尾翼迎角减小约50°，减少约15-20%的空气阻力。DRS在正赛中每圈仅可在指定检测区使用（需满足1秒跟车条件）。' },
-      'Object_12': { zh: '前鼻锥上部面板', cat: 'chassis', desc: '前鼻锥（Nose Cone）上方的碳纤维覆盖面板。鼻锥是赛车最前方的结构件，兼具空气动力学功能和碰撞吸能作用——前碰撞测试要求鼻锥在撞击中可控溃缩以吸收能量。' },
-      'Object_13': { zh: '前鼻锥下部面板', cat: 'chassis', desc: '前鼻锥下方的气动面板。引导气流进入车底的文氏管通道（Venturi Tunnel）入口。2026年规则强化了地面效应，前鼻锥下部的气流管理对整车下压力产出至关重要。' },
-      'Object_29': { zh: '引擎盖铰接面板', cat: 'chassis', desc: '引擎盖（Engine Cover）与底盘之间的连接铰接结构。引擎盖是快速拆装设计，比赛期间机械师可在数秒内取下引擎盖以检查动力单元状态。' },
-      'Object_37': { zh: '引擎盖主体',     cat: 'chassis', desc: '碳纤维引擎盖（Engine Cover），覆盖动力单元和后悬挂顶部。引擎盖的形状决定了流向尾翼的气流质量——引擎盖的"鲨鱼鳍"（Shark Fin）设计用于在侧风中保持尾翼气流的稳定性。' },
-      'Object_38': { zh: '尾翼左侧端板',   cat: 'aero', desc: '尾翼左侧的垂直端板（Endplate）。端板阻止翼尖涡流的形成，减少诱导阻力。端板外侧印有车号，内侧经过复杂的三维曲面设计以优化尾翼内侧气流。2026年端板内置了后轮尾流管理导流片。' },
-      'Object_39': { zh: '尾翼右侧端板',   cat: 'aero', desc: '尾翼右侧端板。与左侧对称。端板还集成了后轮制动灯的安装位置。尾翼端板的下端通常延伸到扩散器出口平面，形成封闭的"端板效应"以增强扩散器效率。' },
-      'Object_46': { zh: '侧箱上盖板',     cat: 'chassis', desc: '侧箱（Sidepod）上方的碳纤维盖板。侧箱内部包含：散热器（中冷器、水冷器、油冷器）、ERS电池组、ECU控制单元和部分电子设备。侧箱上盖板在碰撞时可快速拆卸以进行维修操作。' },
-      'Object_47': { zh: '赞助商涂装贴花层', cat: 'chassis', desc: '车身表面的赞助商标识贴花（Decal/Livery）层。F1赛车涂装使用高性能乙烯基贴膜而非传统喷漆，以减轻重量（整车贴花仅重约150-200g）并允许快速更换。每个赞助商标识的位置都经过精心设计以最大化电视转播曝光。' },
-      'Object_49': { zh: '底盘中央加强结构', cat: 'chassis', desc: '单体壳后部与动力单元连接处的碳纤维加强结构。这个区域承受动力单元的全部扭矩反作用力和后悬挂载荷，是整个赛车机械载荷最大的结构节点之一。' },
-      'Object_61': { zh: '后部扩散器底板', cat: 'aero', desc: '底板后段的扩散器过渡区域。气流在此处从车底向上方膨胀，根据伯努利原理产生低压区。2026年规则的地面效应底板设计在此处设有文氏管通道的扩张段。' },
-      'Object_62': { zh: '扩散器垂直导流片', cat: 'aero', desc: '扩散器（Diffuser）内部的垂直导流片（Fence/Vane）。这些导流片将扩散器出口分割为多个通道，每个通道独立管理不同来源的气流——来自文氏管喉部的加速气流和来自侧箱下方的冷却废气在此精确汇合。' },
-      'Object_147':{ zh: '前翼端板',       cat: 'aero', desc: '前翼（Front Wing）外端的垂直端板。前翼端板产生外洗气流（Outwash），将前轮产生的湍流空气导向赛车外侧，减少其对车身和底板的不利影响。端板的曲率和攻角经过数千小时CFD计算优化。' },
-      'Object_151':{ zh: '侧箱前缘导流板', cat: 'aero', desc: '侧箱前缘的垂直导流板（Sidepod Inlet Guide Vane）。这个关键的气流管理装置决定了进入侧箱散热器进气口的气流质量——既要最大化冷却效率，又要最小化对下游气流的破坏。2026年侧箱采用了激进的"下洗"（Downwash）设计。' },
+      // ── 天线 ──
+      'Object_652': { zh: '天线', cat: 'elec' },
+
+      // ── 头枕 ──
+      'Object_656': { zh: '头枕', cat: 'cockpit' },
+
+      // ── 尾灯 ──
+      'Object_176': { zh: '尾灯', cat: 'elec' },
+      'Object_180': { zh: '尾灯', cat: 'elec' },
+      'Object_648': { zh: '尾灯', cat: 'elec' },
+
+      // ── 尾翼 ──
+      'Object_63': { zh: '尾翼', cat: 'aero' },
+      'Object_67': { zh: '尾翼', cat: 'aero' },
+      'Object_644': { zh: '尾翼', cat: 'aero' },
+
+      // ── 尾翼支架 ──
+      'Object_190': { zh: '尾翼支架', cat: 'aero' },
+      'Object_194': { zh: '尾翼支架', cat: 'aero' },
+
+      // ── 右后轮 ──
+      'Object_247': { zh: '右后轮', cat: 'wheels' },
+      'Object_251': { zh: '右后轮', cat: 'wheels' },
+      'Object_255': { zh: '右后轮', cat: 'wheels' },
+
+      // ── 右后刹车鼓 ──
+      'Object_666': { zh: '右后刹车鼓', cat: 'wheels' },
+      'Object_671': { zh: '右后刹车鼓', cat: 'wheels' },
+      'Object_675': { zh: '右后刹车鼓', cat: 'wheels' },
+
+      // ── 右后视镜 ──
+      'Object_723': { zh: '右后视镜', cat: 'aero' },
+
+      // ── 右后悬挂 ──
+      'Object_124': { zh: '右后悬挂', cat: 'suspension' },
+      'Object_128': { zh: '右后悬挂', cat: 'suspension' },
+      'Object_132': { zh: '右后悬挂', cat: 'suspension' },
+      'Object_136': { zh: '右后悬挂', cat: 'suspension' },
+      'Object_140': { zh: '右后悬挂', cat: 'suspension' },
+      'Object_144': { zh: '右后悬挂', cat: 'suspension' },
+
+      // ── 右前轮 ──
+      'Object_111': { zh: '右前轮', cat: 'wheels' },
+      'Object_115': { zh: '右前轮', cat: 'wheels' },
+      'Object_119': { zh: '右前轮', cat: 'wheels' },
+
+      // ── 右前刹车鼓 ──
+      'Object_737': { zh: '右前刹车鼓', cat: 'wheels' },
+      'Object_742': { zh: '右前刹车鼓', cat: 'wheels' },
+      'Object_746': { zh: '右前刹车鼓', cat: 'wheels' },
+      'Object_751': { zh: '右前刹车鼓', cat: 'wheels' },
+      'Object_756': { zh: '右前刹车鼓', cat: 'wheels' },
+      'Object_761': { zh: '右前刹车鼓', cat: 'wheels' },
+      'Object_766': { zh: '右前刹车鼓', cat: 'wheels' },
+
+      // ── 右前悬挂 ──
+      'Object_81': { zh: '右前悬挂', cat: 'suspension' },
+      'Object_86': { zh: '右前悬挂', cat: 'suspension' },
+      'Object_96': { zh: '右前悬挂', cat: 'suspension' },
+      'Object_101': { zh: '右前悬挂', cat: 'suspension' },
+      'Object_260': { zh: '右前悬挂', cat: 'suspension' },
+      'Object_265': { zh: '右前悬挂', cat: 'suspension' },
+
+      // ── 左后轮 ──
+      'Object_310': { zh: '左后轮', cat: 'wheels' },
+      'Object_314': { zh: '左后轮', cat: 'wheels' },
+      'Object_318': { zh: '左后轮', cat: 'wheels' },
+
+      // ── 左后刹车鼓 ──
+      'Object_213': { zh: '左后刹车鼓', cat: 'wheels' },
+      'Object_218': { zh: '左后刹车鼓', cat: 'wheels' },
+      'Object_222': { zh: '左后刹车鼓', cat: 'wheels' },
+
+      // ── 左后视镜 ──
+      'Object_208': { zh: '左后视镜', cat: 'aero' },
+
+      // ── 左后悬挂 ──
+      'Object_270': { zh: '左后悬挂', cat: 'suspension' },
+      'Object_274': { zh: '左后悬挂', cat: 'suspension' },
+      'Object_278': { zh: '左后悬挂', cat: 'suspension' },
+      'Object_282': { zh: '左后悬挂', cat: 'suspension' },
+      'Object_286': { zh: '左后悬挂', cat: 'suspension' },
+      'Object_290': { zh: '左后悬挂', cat: 'suspension' },
+
+      // ── 左前轮 ──
+      'Object_159': { zh: '左前轮', cat: 'wheels' },
+      'Object_163': { zh: '左前轮', cat: 'wheels' },
+      'Object_167': { zh: '左前轮', cat: 'wheels' },
+
+      // ── 左前刹车鼓 ──
+      'Object_18': { zh: '左前刹车鼓', cat: 'wheels' },
+      'Object_23': { zh: '左前刹车鼓', cat: 'wheels' },
+      'Object_27': { zh: '左前刹车鼓', cat: 'wheels' },
+      'Object_32': { zh: '左前刹车鼓', cat: 'wheels' },
+      'Object_37': { zh: '左前刹车鼓', cat: 'wheels' },
+      'Object_42': { zh: '左前刹车鼓', cat: 'wheels' },
+      'Object_47': { zh: '左前刹车鼓', cat: 'wheels' },
+
+      // ── 左前悬挂 ──
+      'Object_52': { zh: '左前悬挂', cat: 'suspension' },
+      'Object_57': { zh: '左前悬挂', cat: 'suspension' },
+      'Object_199': { zh: '左前悬挂', cat: 'suspension' },
+      'Object_204': { zh: '左前悬挂', cat: 'suspension' },
+      'Object_714': { zh: '左前悬挂', cat: 'suspension' },
+      'Object_719': { zh: '左前悬挂', cat: 'suspension' },
+
+      // ── 座舱 ──
+      'Object_91': { zh: '座舱', cat: 'cockpit' },
+      'Object_105': { zh: '座舱', cat: 'cockpit' },
+      'Object_153': { zh: '座舱', cat: 'cockpit' },
+      'Object_172': { zh: '座舱', cat: 'cockpit' },
+      'Object_304': { zh: '座舱', cat: 'cockpit' },
+
     };
 
     // 根据 mesh 名称解析中文名、分类和专业描述
@@ -1061,8 +1102,8 @@
         this.scene = scene;
         this.pivotGroup = new THREE.Group(); // root for all extracted pivots
         this.scene.add(this.pivotGroup);
-        this.parts = []; // { id, meshName, category, pivot, center, direction, maxDist, assembledPos, explodedPos }
-        this.modelCenter = new THREE.Vector3();
+        this.parts = []; // { id, meshName, category, pivot, center, assembledPos, explodedPos }
+        this.cintureOffCenter = new THREE.Vector3();
       }
 
       async loadAndExtract(gltfPath, onProgress) {
@@ -1074,13 +1115,6 @@
 
         // Update world matrices after loading
         model.updateWorldMatrix(true, true);
-
-        // Compute global model bounding box
-        const bbox = new THREE.Box3().expandByObject(model);
-        bbox.getCenter(this.modelCenter);
-
-        console.log('Model center:', this.modelCenter.toArray());
-        console.log('Model size:', bbox.getSize(new THREE.Vector3()).toArray());
 
         // Collect all meshes with their FULL world transforms
         // Also capture parent group name for diagnostics
@@ -1120,6 +1154,7 @@
             meshes.push({
               mesh: child,
               name: child.name,
+              zhName: zhName,
               parentGroup,
               category: category,
               desc: desc,
@@ -1131,6 +1166,24 @@
         });
 
         console.log(`Found ${meshes.length} named meshes`);
+
+        // Compute CINTURE_OFF (安全带关闭) center as explosion origin
+        let cintureOffCount = 0;
+        this.cintureOffCenter.set(0, 0, 0);
+        for (const m of meshes) {
+          if (m.zhName === '安全带关闭') {
+            this.cintureOffCenter.add(m.worldPos);
+            cintureOffCount++;
+          }
+        }
+        if (cintureOffCount > 0) {
+          this.cintureOffCenter.divideScalar(cintureOffCount);
+        } else {
+          // Fallback: use model bounding box center
+          const bbox = new THREE.Box3().expandByObject(model);
+          bbox.getCenter(this.cintureOffCenter);
+        }
+        console.log('CINTURE_OFF center (explosion origin):', this.cintureOffCenter.toArray());
 
         // Group meshes by Chinese name (multiple meshes may share the same name)
         const groups = new Map(); // zhName → { meshes[], category }
@@ -1149,14 +1202,13 @@
         console.log('Resolved groups:', JSON.stringify(debugGroups));
         console.log(`Grouped into ${groups.size} parts across ${Object.keys(catParts).length} categories`);
 
-        // Debug: show first few parts' explosion data
+        // Quick debug: show sample groups and counts
         if (groups.size > 0) {
           const sample = [...groups.entries()].slice(0, 3);
           sample.forEach(([name, g]) => {
-            const center = new THREE.Vector3(); g.meshes.forEach(m => center.add(m.worldPos)); center.divideScalar(g.meshes.length);
-            console.log(`Part "${name}": center=(${center.x.toFixed(2)},${center.y.toFixed(2)},${center.z.toFixed(2)}) meshes=${g.meshes.length}`);
+            console.log(`Part "${name}": meshes=${g.meshes.length}`);
           });
-          console.log('Model center:', this.modelCenter.toArray().map(v=>v.toFixed(2)));
+          console.log('CINTURE_OFF origin:', this.cintureOffCenter.toArray().map(v=>v.toFixed(2)));
         }
 
         // Create pivot groups for each mesh-name group
@@ -1187,23 +1239,11 @@
             pivot.add(clone);
           }
 
-          // Determine explosion direction with vertical emphasis
-          const dir = center.clone().sub(this.modelCenter);
-          const dist = dir.length();
-          if (dist < 0.05) {
-            // Center parts: go upward with slight random scatter
-            dir.set((Math.random() - 0.5) * 0.3, 0.6 + Math.random() * 0.4, (Math.random() - 0.5) * 0.3);
-            dir.normalize();
-          } else {
-            dir.normalize();
-            // Amplify vertical separation: parts above center go more up, below go more down
-            const verticalOffset = (center.y - this.modelCenter.y);
-            dir.y += verticalOffset * 1.5;
-            dir.normalize();
-          }
-
-          // Larger explosion range for better visual separation
-          const maxDist = Math.max(0.5, dist * 1.6 + 0.5);
+          // Explosion: exploded = original * mag (relative to CINTURE_OFF center)
+          const mag = CAR.explosionMagnification;
+          const original = center.clone().sub(this.cintureOffCenter);
+          const dist = original.length();
+          const dir = dist > 0.001 ? original.clone().normalize() : new THREE.Vector3(0, 1, 0);
 
           // Generate display name and description (use description from first mesh in group)
           const categoryZh = (CATEGORIES.find(c => c.id === group.category) || {}).labelZh || group.category;
@@ -1217,7 +1257,7 @@
           const override = CAR.explosionOverrides[zhName];
           const explodedPos = override
             ? center.clone().add(new THREE.Vector3(...override))
-            : center.clone().addScaledVector(dir, maxDist);
+            : this.cintureOffCenter.clone().addScaledVector(dir, dist * mag);
 
           const entry = {
             id,
@@ -1229,8 +1269,6 @@
             pivot,
             center: center.clone(),
             assembledPos: center.clone(),
-            direction: dir,
-            maxDist,
             explodedPos,
             currentFactor: 0,
             targetFactor: 0,
@@ -1250,8 +1288,8 @@
 
         // Sort parts: center parts first, then by distance from center
         this.parts.sort((a, b) => {
-          const da = a.center.distanceToSquared(this.modelCenter);
-          const db = b.center.distanceToSquared(this.modelCenter);
+          const da = a.center.distanceToSquared(this.cintureOffCenter);
+          const db = b.center.distanceToSquared(this.cintureOffCenter);
           return da - db;
         });
 
@@ -1259,7 +1297,7 @@
 
         // ── 诊断输出：每个Object_# mesh及其父组和坐标 ──
         console.log('=== MESH DIAGNOSTICS ===');
-        console.log(`Model Center: (${this.modelCenter.x.toFixed(4)}, ${this.modelCenter.y.toFixed(4)}, ${this.modelCenter.z.toFixed(4)})`);
+        console.log(`CINTURE_OFF Origin: (${this.cintureOffCenter.x.toFixed(4)}, ${this.cintureOffCenter.y.toFixed(4)}, ${this.cintureOffCenter.z.toFixed(4)})`);
         console.log('');
         console.log('MeshName           | ParentGroup          | center.x, center.y, center.z');
         console.log('-------------------|----------------------|------------------------------');
