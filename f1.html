@@ -655,8 +655,8 @@
       cameraTarget: [0, 0.2, 0.5],
       // 手动爆炸覆盖: { 部件中文名: [dx, dy, dz] } — 空对象表示全部用算法
       explosionOverrides: {},
-      // 爆炸倍率: 爆炸后坐标 = 爆炸前坐标 * explosionMagnification (相对CINTURE_OFF中心)
-      explosionMagnification: 5,
+      // 爆炸倍率 (相对CINTURE_OFF中心): exploded.x = original.x * magX, .y = original.y * magY, .z = original.z * magZ
+      explosionMagnification: { x: 3, y: 13, z: 3 },
     };
 
     // ===== Object_# → 真实F1部件名称与描述 =====
@@ -1239,11 +1239,9 @@
             pivot.add(clone);
           }
 
-          // Explosion: exploded = original * mag (relative to CINTURE_OFF center)
+          // Explosion: per-axis magnification (relative to CINTURE_OFF center)
           const mag = CAR.explosionMagnification;
           const original = center.clone().sub(this.cintureOffCenter);
-          const dist = original.length();
-          const dir = dist > 0.001 ? original.clone().normalize() : new THREE.Vector3(0, 1, 0);
 
           // Generate display name and description (use description from first mesh in group)
           const categoryZh = (CATEGORIES.find(c => c.id === group.category) || {}).labelZh || group.category;
@@ -1257,7 +1255,11 @@
           const override = CAR.explosionOverrides[zhName];
           const explodedPos = override
             ? center.clone().add(new THREE.Vector3(...override))
-            : this.cintureOffCenter.clone().addScaledVector(dir, dist * mag);
+            : new THREE.Vector3(
+                this.cintureOffCenter.x + original.x * mag.x,
+                this.cintureOffCenter.y + original.y * mag.y,
+                this.cintureOffCenter.z + original.z * mag.z
+              );
 
           const entry = {
             id,

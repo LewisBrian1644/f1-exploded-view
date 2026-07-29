@@ -1,0 +1,24 @@
+{
+  "name": "f1-exploded-view",
+  "version": "1.0.0",
+  "description": "基于 Three.js 的 F1 赛车 3D 爆炸视图，支持部件分解、分类筛选、交互式 3D 探索。",
+  "main": "gen-mesh-ref.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LewisBrian1644/f1-exploded-view.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/LewisBrian1644/f1-exploded-view/issues"
+  },
+  "homepage": "https://github.com/LewisBrian1644/f1-exploded-view#readme",
+  "dependencies": {
+    "ali-oss": "^6.23.0"
+  }
+}

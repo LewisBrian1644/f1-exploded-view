@@ -1,5 +1,9 @@
+# 依赖
+/node_modules/
+
 # 3D 模型文件 (体积较大，通过 Sketchfab 下载)
 /model/
+/ferrari-f1-2019/
 
 # 操作系统
 .DS_Store
