@@ -21,7 +21,7 @@ npx serve .
 # 或
 python -m http.server 8080
 ```
-然后访问 http://localhost:8080/f1.html
+然后访问 http://localhost:8080
 
 ## 技术栈
 - Three.js 0.160 (WebGL 3D渲染)
