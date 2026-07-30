@@ -229,6 +229,15 @@
       color: var(--color-text-muted);
     }
 
+    #loading-overlay .loading-sub {
+      font-size: 0.7rem;
+      color: #666;
+      max-width: 280px;
+      text-align: center;
+      line-height: 1.4;
+      transition: opacity 0.3s;
+    }
+
     /* ===== Sidebar - Category Filters ===== */
     #sidebar {
       grid-area: sidebar;
@@ -598,6 +607,7 @@
           <div class="progress-fill" id="progress-fill"></div>
         </div>
         <div class="loading-text" id="loading-text">加载 3D 模型中...</div>
+        <div class="loading-sub" id="loading-sub">模型文件约 70MB，首次加载请耐心等待</div>
       </div>
     </div>
 
@@ -1112,10 +1122,21 @@
       }
 
       async loadAndExtract(gltfPath, onProgress) {
-        const loader = new GLTFLoader();
-        const gltf = await loader.loadAsync(gltfPath, (e) => {
-          if (onProgress && e.total) onProgress(e.loaded / e.total);
-        });
+        // Use LoadingManager to track ALL sub-resources (gltf + bin + textures)
+        // The default GLTFLoader onProgress only tracks the main .gltf file
+        const manager = new THREE.LoadingManager();
+        manager.onProgress = (url, loaded, total) => {
+          if (onProgress) {
+            // Download phase: file-level progress (0% → 85%)
+            onProgress(loaded / Math.max(total, 47), 'download', { loaded, total });
+          }
+        };
+
+        const loader = new GLTFLoader(manager);
+        const gltf = await loader.loadAsync(gltfPath);
+
+        // All files downloaded — begin processing
+        if (onProgress) onProgress(0.88, 'parse');
         const model = gltf.scene;
 
         // Update world matrices after loading
@@ -1170,6 +1191,7 @@
           }
         });
 
+        if (onProgress) onProgress(0.92, 'build');
         console.log(`Found ${meshes.length} named meshes`);
 
         // Compute CINTURE_OFF (安全带关闭) center as explosion origin
@@ -1317,6 +1339,7 @@
         console.log('=== END DIAGNOSTICS ===');
         console.log(`Total meshes: ${meshes.length}, Grouped parts: ${this.parts.length}`);
 
+        if (onProgress) onProgress(1.0, 'done');
         return this.parts;
       }
 
@@ -1608,6 +1631,7 @@
         this.loadingOverlay = document.getElementById('loading-overlay');
         this.progressFill = document.getElementById('progress-fill');
         this.loadingText = document.getElementById('loading-text');
+        this.loadingSub = document.getElementById('loading-sub');
         this._introWasPlaying = false;
       }
 
@@ -1640,6 +1664,8 @@
         this.progressFill.style.width = '0%';
         this.progressFill.style.background = '';
         this.loadingText.textContent = `加载 ${CAR.name}...`;
+        this.loadingSub.style.display = '';
+        this.loadingSub.textContent = '模型文件约 70MB，首次加载请耐心等待';
 
         // Clean up old parts
         if (this.extractor) {
@@ -1653,27 +1679,46 @@
         this.extractor = new ModelPartExtractor(this.sceneManager.scene);
 
         try {
-          this.parts = await this.extractor.loadAndExtract(CAR.modelPath, (pct) => {
-            const percent = Math.round(pct * 100);
+          this.parts = await this.extractor.loadAndExtract(CAR.modelPath, (pct, phase, info) => {
+            const percent = Math.min(99, Math.round(pct * 100));
             this.progressFill.style.width = percent + '%';
-            if (percent < 40) this.loadingText.textContent = `下载模型中... ${percent}%`;
-            else if (percent < 70) this.loadingText.textContent = `解析贴图... ${percent}%`;
-            else this.loadingText.textContent = `构建部件... ${percent}%`;
+            if (phase === 'download') {
+              const files = info ? `${info.loaded}/${info.total}` : '';
+              if (pct < 0.3) this.loadingText.textContent = `下载模型文件中... ${percent}%`;
+              else if (pct < 0.6) this.loadingText.textContent = `下载贴图文件中... ${percent}%`;
+              else this.loadingText.textContent = `下载剩余资源... ${percent}%`;
+              this.loadingSub.textContent = files ? `正在下载第 ${files} 个文件` : '模型文件约 70MB，请耐心等待';
+            } else if (phase === 'parse') {
+              this.progressFill.style.width = '90%';
+              this.loadingText.textContent = '解析模型结构...';
+              this.loadingSub.textContent = '正在解析 glTF 节点与网格数据';
+            } else if (phase === 'build') {
+              this.progressFill.style.width = '95%';
+              this.loadingText.textContent = '构建部件系统...';
+              this.loadingSub.textContent = '正在分组部件并计算爆炸方向';
+            }
           });
         } catch (err) {
           console.error('Failed to load model:', err);
           this.loadingText.innerHTML = `<div style="text-align:center;color:#e74c3c;"><div style="font-size:1.2rem;margin-bottom:0.5rem;">❌ 模型加载失败</div><div style="font-size:0.7rem;margin-bottom:0.5rem;word-break:break-all;">${err.message || err}</div><div style="font-size:0.65rem;margin-top:0.5rem;color:#999;">${CAR.modelPath}</div></div>`;
+          this.loadingSub.textContent = '请刷新页面重试，或检查网络连接';
           this.progressFill.style.width = '100%';
           this.progressFill.style.background = '#e74c3c';
           return;
         }
 
-        setTimeout(() => { this.loadingOverlay.classList.add('hidden'); }, 400);
-
         if (this.parts.length === 0) {
           this.loadingText.textContent = '⚠️ 未能提取到任何模型部件';
+          this.loadingSub.textContent = '模型中没有找到命名网格，请检查模型文件';
+          this.progressFill.style.width = '100%';
+          this.progressFill.style.background = '#f39c12';
           return;
         }
+
+        setTimeout(() => {
+          this.loadingOverlay.classList.add('hidden');
+          this.loadingSub.style.display = 'none';
+        }, 400);
 
         // Update camera
         const cp = CAR.cameraPos;
