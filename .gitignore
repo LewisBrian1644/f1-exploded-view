@@ -1,8 +1,7 @@
 # 依赖
 /node_modules/
 
-# 3D 模型文件 (体积较大，通过 Sketchfab 下载)
-/model/
+# 原始模型导出目录
 /ferrari-f1-2019/
 
 # 操作系统
