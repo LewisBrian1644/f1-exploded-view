@@ -231,7 +231,7 @@
 
     #loading-overlay .loading-sub {
       font-size: 0.7rem;
-      color: #666;
+      color: var(--color-text-muted);
       max-width: 280px;
       text-align: center;
       line-height: 1.4;
@@ -1122,28 +1122,18 @@
       }
 
       async loadAndExtract(gltfPath, onProgress) {
-        const loader = new GLTFLoader();
-
-        // Heartbeat: keeps UI alive while waiting for large sub-resources (bin 19MB + textures)
-        let heartbeatTicks = 0;
-        let mainFileDone = false;
-        const heartbeat = setInterval(() => {
-          heartbeatTicks++;
+        // Use LoadingManager to track ALL sub-resources (gltf + bin + textures)
+        // The default GLTFLoader onProgress only tracks the main .gltf file
+        const manager = new THREE.LoadingManager();
+        manager.onProgress = (url, loaded, total) => {
           if (onProgress) {
-            onProgress(mainFileDone ? Math.min(0.3 + heartbeatTicks * 0.05, 0.82) : -1, 'heartbeat', heartbeatTicks);
+            // Download phase: file-level progress (0% → 85%)
+            onProgress(loaded / Math.max(total, 47), 'download', { loaded, total });
           }
-        }, 2500);
+        };
 
-        const gltf = await loader.loadAsync(gltfPath, (e) => {
-          if (e.total && onProgress) {
-            // Main .gltf file download — byte-level progress
-            const pct = e.loaded / e.total;
-            onProgress(pct * 0.25, 'main', null); // main file is ~25% of total work
-            if (pct >= 0.99) mainFileDone = true;
-          }
-        });
-
-        clearInterval(heartbeat);
+        const loader = new GLTFLoader(manager);
+        const gltf = await loader.loadAsync(gltfPath);
 
         // All files downloaded — begin processing
         if (onProgress) onProgress(0.88, 'parse');
@@ -1689,27 +1679,15 @@
         this.extractor = new ModelPartExtractor(this.sceneManager.scene);
 
         try {
-          this.parts = await this.extractor.loadAndExtract(CAR.modelPath, (pct, phase, heartbeatTicks) => {
-            if (phase === 'main') {
-              // Main .gltf file download — byte-level progress (0% → 25% of bar)
-              const percent = Math.round(pct * 100);
-              this.progressFill.style.width = percent + '%';
-              this.loadingText.textContent = `下载模型中... ${percent}%`;
-            } else if (phase === 'heartbeat') {
-              // Sub-resources downloading — progress bar slowly creeps after main file done
-              if (pct >= 0) {
-                const percent = Math.round(pct * 100);
-                this.progressFill.style.width = Math.min(82, percent) + '%';
-                this.loadingText.textContent = '下载模型资源中...';
-              }
-              const msgs = [
-                '模型文件约 70MB，首次加载请耐心等待',
-                '正在下载 3D 网格数据 (19MB)...',
-                '正在下载高清贴图资源 (44 张贴图)...',
-                '网络较慢时可能需要 1-2 分钟',
-                '请耐心等待，精彩即将呈现...',
-              ];
-              this.loadingSub.textContent = msgs[(heartbeatTicks - 1) % msgs.length];
+          this.parts = await this.extractor.loadAndExtract(CAR.modelPath, (pct, phase, info) => {
+            const percent = Math.min(99, Math.round(pct * 100));
+            this.progressFill.style.width = percent + '%';
+            if (phase === 'download') {
+              const files = info ? `${info.loaded}/${info.total}` : '';
+              if (pct < 0.3) this.loadingText.textContent = `下载模型文件中... ${percent}%`;
+              else if (pct < 0.6) this.loadingText.textContent = `下载贴图文件中... ${percent}%`;
+              else this.loadingText.textContent = `下载剩余资源... ${percent}%`;
+              this.loadingSub.textContent = files ? `正在下载第 ${files} 个文件` : '模型文件约 70MB，请耐心等待';
             } else if (phase === 'parse') {
               this.progressFill.style.width = '90%';
               this.loadingText.textContent = '解析模型结构...';
