@@ -1126,18 +1126,24 @@
       }
 
       async loadAndExtract(gltfPath, onProgress) {
-        // Use LoadingManager to track ALL sub-resources (gltf + bin + textures)
-        // The default GLTFLoader onProgress only tracks the main .gltf file
-        const manager = new THREE.LoadingManager();
-        manager.onProgress = (url, loaded, total) => {
-          if (onProgress && total > 0) {
-            onProgress(loaded / total, 'download', { loaded, total });
-          }
-        };
-
-        const loader = new GLTFLoader(manager);
+        // Single .glb file — use GLTFLoader's own XHR onProgress for byte-level tracking.
+        // LoadingManager is not needed here since there's only one file now.
+        const loader = new GLTFLoader();
         loader.setDRACOLoader(dracoLoader);
-        const gltf = await loader.loadAsync(gltfPath);
+
+        const gltf = await new Promise((resolve, reject) => {
+          loader.load(gltfPath, resolve, (e) => {
+            // XHR progress event: e.loaded / e.total are bytes
+            if (onProgress) {
+              if (e.lengthComputable && e.total > 0) {
+                onProgress(e.loaded / e.total, 'download', { loaded: e.loaded, total: e.total });
+              } else {
+                // No Content-Length — report indeterminate but non-zero so bar shows activity
+                onProgress(-1, 'download', { loaded: e.loaded, total: 0 });
+              }
+            }
+          }, reject);
+        });
 
         // All files downloaded — begin processing
         if (onProgress) onProgress(0.90, 'parse');
@@ -1666,6 +1672,7 @@
         this.loadingOverlay.classList.remove('hidden');
         this.progressFill.style.width = '0%';
         this.progressFill.style.background = '';
+        this._lastDownloadPct = 0;
         this.loadingText.textContent = `加载 ${CAR.name}...`;
         this.loadingSub.style.display = '';
         this.loadingSub.textContent = '模型文件约 4MB，首次加载请耐心等待';
@@ -1683,17 +1690,31 @@
 
         try {
           this.parts = await this.extractor.loadAndExtract(CAR.modelPath, (pct, phase, info) => {
-            const percent = Math.round(pct * 100);
-            this.progressFill.style.width = percent + '%';
             if (phase === 'download') {
-              if (percent < 30) this.loadingText.textContent = `下载模型中... ${percent}%`;
-              else if (percent < 60) this.loadingText.textContent = `下载贴图中... ${percent}%`;
-              else this.loadingText.textContent = `下载资源中... ${percent}%`;
-              this.loadingSub.textContent = `正在下载第 ${info.loaded}/${info.total} 个文件`;
+              const loadedMB = (info.loaded / 1048576).toFixed(1);
+              if (pct >= 0 && info.total > 0) {
+                // Byte-level progress with known total
+                const percent = Math.round(pct * 100);
+                this.progressFill.style.width = percent + '%';
+                const totalMB = (info.total / 1048576).toFixed(1);
+                this.loadingText.textContent = `下载模型中... ${percent}%`;
+                this.loadingSub.textContent = `${loadedMB} MB / ${totalMB} MB`;
+              } else {
+                // Indeterminate (no Content-Length) — estimate from loaded bytes (~4.2MB)
+                const estimated = Math.min(Math.round((info.loaded / 4400000) * 100), 90);
+                this.progressFill.style.width = Math.max(estimated, this._lastDownloadPct || 0) + '%';
+                this._lastDownloadPct = Math.max(estimated, this._lastDownloadPct || 0);
+                this.loadingText.textContent = `下载模型中...`;
+                this.loadingSub.textContent = `已下载 ${loadedMB} MB`;
+              }
             } else if (phase === 'parse') {
+              const percent = Math.round(pct * 100);
+              this.progressFill.style.width = percent + '%';
               this.loadingText.textContent = '解析模型结构...';
               this.loadingSub.textContent = '正在解析 glTF 节点与网格数据';
             } else if (phase === 'build') {
+              const percent = Math.round(pct * 100);
+              this.progressFill.style.width = percent + '%';
               this.loadingText.textContent = '构建部件系统...';
               this.loadingSub.textContent = '正在分组部件并计算爆炸方向';
             }
