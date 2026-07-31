@@ -606,7 +606,7 @@
           <div class="progress-fill" id="progress-fill"></div>
         </div>
         <div class="loading-text" id="loading-text">加载 3D 模型中...</div>
-        <div class="loading-sub" id="loading-sub">模型文件约 70MB，首次加载请耐心等待</div>
+        <div class="loading-sub" id="loading-sub">模型文件约 4MB，首次加载请耐心等待</div>
       </div>
     </div>
 
@@ -648,6 +648,11 @@
     import * as THREE from 'three';
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+
+    // ===== DRACO Decoder (shared) =====
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath('https://unpkg.com/three@0.160.0/examples/jsm/libs/draco/');
 
     // ===== Constants =====
     const CATEGORIES = [
@@ -664,7 +669,7 @@
     // ===== 🏎️ 车辆配置 =====
     const CAR = {
       name: 'Aston Martin AMR26',
-      modelPath: 'model/scene.gltf',
+      modelPath: 'model/scene-compressed.glb',
       cameraPos: [3.5, 2.0, 5.5],
       cameraTarget: [0, 0.2, 0.5],
       // 手动爆炸覆盖: { 部件中文名: [dx, dy, dz] } — 空对象表示全部用算法
@@ -1131,6 +1136,7 @@
         };
 
         const loader = new GLTFLoader(manager);
+        loader.setDRACOLoader(dracoLoader);
         const gltf = await loader.loadAsync(gltfPath);
 
         // All files downloaded — begin processing
@@ -1662,7 +1668,7 @@
         this.progressFill.style.background = '';
         this.loadingText.textContent = `加载 ${CAR.name}...`;
         this.loadingSub.style.display = '';
-        this.loadingSub.textContent = '模型文件约 70MB，首次加载请耐心等待';
+        this.loadingSub.textContent = '模型文件约 4MB，首次加载请耐心等待';
 
         // Clean up old parts
         if (this.extractor) {
