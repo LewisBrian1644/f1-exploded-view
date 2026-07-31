@@ -670,6 +670,7 @@
     const CAR = {
       name: 'Aston Martin AMR26',
       modelPath: 'model/scene-compressed.glb',
+      modelSizeEstimate: 4.4 * 1024 * 1024,  // ~4.4MB — used for indeterminate progress bar
       cameraPos: [3.5, 2.0, 5.5],
       cameraTarget: [0, 0.2, 0.5],
       // 手动爆炸覆盖: { 部件中文名: [dx, dy, dz] } — 空对象表示全部用算法
@@ -1126,24 +1127,22 @@
       }
 
       async loadAndExtract(gltfPath, onProgress) {
-        // Single .glb file — use GLTFLoader's own XHR onProgress for byte-level tracking.
-        // LoadingManager is not needed here since there's only one file now.
         const loader = new GLTFLoader();
         loader.setDRACOLoader(dracoLoader);
 
-        const gltf = await new Promise((resolve, reject) => {
-          loader.load(gltfPath, resolve, (e) => {
-            // XHR progress event: e.loaded / e.total are bytes
-            if (onProgress) {
-              if (e.lengthComputable && e.total > 0) {
-                onProgress(e.loaded / e.total, 'download', { loaded: e.loaded, total: e.total });
-              } else {
-                // No Content-Length — report indeterminate but non-zero so bar shows activity
-                onProgress(-1, 'download', { loaded: e.loaded, total: 0 });
-              }
-            }
-          }, reject);
-        });
+        // loadAsync accepts onProgress — gives us XHR byte-level events for the single .glb
+        let lastUpdate = 0;
+        const gltf = await loader.loadAsync(gltfPath, onProgress ? (e) => {
+          // Throttle: DOM updates >50ms apart are invisible to users
+          const now = performance.now();
+          if (now - lastUpdate < 50) return;
+          lastUpdate = now;
+          if (e.lengthComputable && e.total > 0) {
+            onProgress(e.loaded / e.total, 'download', { loaded: e.loaded, total: e.total });
+          } else {
+            onProgress(-1, 'download', { loaded: e.loaded, total: 0 });
+          }
+        } : undefined);
 
         // All files downloaded — begin processing
         if (onProgress) onProgress(0.90, 'parse');
@@ -1690,34 +1689,30 @@
 
         try {
           this.parts = await this.extractor.loadAndExtract(CAR.modelPath, (pct, phase, info) => {
+            // Compute percent once — only the indeterminate download branch uses a different value
+            let percent = Math.round(pct * 100);
             if (phase === 'download') {
               const loadedMB = (info.loaded / 1048576).toFixed(1);
               if (pct >= 0 && info.total > 0) {
-                // Byte-level progress with known total
-                const percent = Math.round(pct * 100);
-                this.progressFill.style.width = percent + '%';
                 const totalMB = (info.total / 1048576).toFixed(1);
                 this.loadingText.textContent = `下载模型中... ${percent}%`;
                 this.loadingSub.textContent = `${loadedMB} MB / ${totalMB} MB`;
               } else {
-                // Indeterminate (no Content-Length) — estimate from loaded bytes (~4.2MB)
-                const estimated = Math.min(Math.round((info.loaded / 4400000) * 100), 90);
-                this.progressFill.style.width = Math.max(estimated, this._lastDownloadPct || 0) + '%';
-                this._lastDownloadPct = Math.max(estimated, this._lastDownloadPct || 0);
+                // No Content-Length — estimate from loaded bytes vs expected model size
+                const estimated = Math.min(Math.round((info.loaded / CAR.modelSizeEstimate) * 100), 90);
+                percent = Math.max(estimated, this._lastDownloadPct);
+                this._lastDownloadPct = percent;
                 this.loadingText.textContent = `下载模型中...`;
                 this.loadingSub.textContent = `已下载 ${loadedMB} MB`;
               }
             } else if (phase === 'parse') {
-              const percent = Math.round(pct * 100);
-              this.progressFill.style.width = percent + '%';
               this.loadingText.textContent = '解析模型结构...';
               this.loadingSub.textContent = '正在解析 glTF 节点与网格数据';
             } else if (phase === 'build') {
-              const percent = Math.round(pct * 100);
-              this.progressFill.style.width = percent + '%';
               this.loadingText.textContent = '构建部件系统...';
               this.loadingSub.textContent = '正在分组部件并计算爆炸方向';
             }
+            this.progressFill.style.width = percent + '%';
           });
         } catch (err) {
           console.error('Failed to load model:', err);
