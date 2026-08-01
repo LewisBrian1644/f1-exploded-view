@@ -1468,6 +1468,17 @@
 
             clone.castShadow = true;
             clone.receiveShadow = true;
+
+            // Fix transparent/BLEND materials: ensure correct renderOrder & depthWrite
+            const mats = Array.isArray(clone.material) ? clone.material : [clone.material];
+            mats.forEach(mat => {
+              if (mat.transparent) {
+                mat.depthWrite = false;
+                mat.renderOrder = 1;
+                mat.needsUpdate = true;
+              }
+            });
+
             pivot.add(clone);
           }
 
