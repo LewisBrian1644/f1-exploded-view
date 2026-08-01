@@ -478,6 +478,19 @@
       z-index: 10;
     }
 
+    #car-selector {
+      background: var(--color-surface-alt);
+      color: var(--color-text);
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 0.75rem;
+      font-family: inherit;
+      cursor: pointer;
+      min-width: 140px;
+    }
+    #car-selector:focus { outline: none; border-color: var(--color-primary); }
+
     #bottombar .slider-label {
       font-size: 0.8rem;
       font-weight: 600;
@@ -711,6 +724,8 @@
 
     <!-- Bottom Bar -->
     <div id="bottombar">
+      <select id="car-selector" title="选择赛车">
+      </select>
       <span class="slider-label">💥 爆炸程度</span>
       <input type="range" id="explosion-slider" min="0" max="100" value="0" step="1">
       <span class="slider-value" id="slider-value">0%</span>
@@ -743,21 +758,46 @@
       { id: 'cooling',    label: 'Cooling',        labelZh: '冷却系统',     color: '#1abc9c', shortcut: '8' },
     ];
 
-    // ===== 🏎️ 车辆配置 =====
-    const CAR = {
-      name: 'Aston Martin AMR26',
-      modelPath: 'model/scene-compressed.glb',
-      modelSizeEstimate: 4.4 * 1024 * 1024,  // ~4.4MB — used for indeterminate progress bar
-      cameraPos: [3.5, 2.0, 5.5],
-      cameraTarget: [0, 0.2, 0.5],
-      // 手动爆炸覆盖: { 部件中文名: [dx, dy, dz] } — 空对象表示全部用算法
-      explosionOverrides: {},
-      // 爆炸倍率 (相对CINTURE_OFF中心): exploded.x = original.x * magX, .y = original.y * magY, .z = original.z * magZ
-      explosionMagnification: { x: 3, y: 13, z: 3 },
-    };
+    // ===== 🏎️ 多车配置 =====
+    const CARS = [
+      {
+        id: 'amr26',
+        name: 'Aston Martin AMR26',
+        year: '2026',
+        modelPath: 'model/amr26.glb',
+        modelSizeEstimate: 4.4 * 1024 * 1024,
+        cameraPos: [3.5, 2.0, 5.5],
+        cameraTarget: [0, 0.2, 0.5],
+        explosionOverrides: {},
+        explosionMagnification: { x: 3, y: 13, z: 3 },
+      },
+      {
+        id: 'sf90',
+        name: 'Ferrari SF90',
+        year: '2019',
+        modelPath: 'model/sf90-2019.glb',
+        modelSizeEstimate: 5.5 * 1024 * 1024,
+        cameraPos: [3.5, 2.0, 5.5],
+        cameraTarget: [0, 0.2, 0.5],
+        explosionOverrides: {},
+        explosionMagnification: { x: 3, y: 13, z: 3 },
+      },
+      {
+        id: 'sf23',
+        name: 'Ferrari SF-23',
+        year: '2023',
+        modelPath: 'model/sf23-2023.glb',
+        modelSizeEstimate: 4.5 * 1024 * 1024,
+        cameraPos: [3.5, 2.0, 5.5],
+        cameraTarget: [0, 0.2, 0.5],
+        explosionOverrides: {},
+        explosionMagnification: { x: 3, y: 13, z: 3 },
+      },
+    ];
+    let currentCar = CARS[0];
 
     // ===== Object_# → 真实F1部件名称与描述 =====
-    CAR.objectNames = {
+    CARS[0].objectNames = {
       // ── 安全带打开 ──
       'Object_728': { zh: '安全带打开', cat: 'cockpit' },
       'Object_732': { zh: '安全带打开', cat: 'cockpit' },
@@ -1005,14 +1045,14 @@
 
     // 根据 mesh 名称解析中文名、分类和专业描述
     function resolveMeshName(name) {
-      const entry = CAR.objectNames[name] || CAR.namedMeshInfo[name];
+      const entry = (currentCar.objectNames && currentCar.objectNames[name]) || (currentCar.namedMeshInfo && currentCar.namedMeshInfo[name]);
       if (entry) return { zh: entry.zh, category: entry.cat, desc: entry.desc || '' };
       if (/^Object_\d+$/.test(name)) return { zh: '未识别零件(' + name + ')', category: 'chassis', desc: '' };
       return null;
     }
 
     // ===== 命名 Mesh → F1部件名称与描述 =====
-    CAR.namedMeshInfo = {
+    CARS[0].namedMeshInfo = {
       chasis:             { zh: '单体壳底盘',     cat: 'chassis', desc: '碳纤维复合材料底盘主体（Monocoque / Survival Cell），F1赛车最核心的安全结构。由超过12层不同方向的碳纤维预浸布和蜂窝铝芯材在高压釜中固化成型，形成一件完整的"生存舱"。通过FIA严格的碰撞测试——包括正面、侧面、后方撞击和静态挤压测试。' },
       chassis2:           { zh: '底盘上部结构',   cat: 'chassis', desc: '底盘上部的碳纤维结构，连接单体壳与后部动力单元安装点，并为座舱开口和Halo提供结构支撑。上部的几何形状同时作为引擎盖和侧箱的空气动力学基准面。' },
       carbon:             { zh: '碳纤维引擎盖',   cat: 'chassis', desc: '碳纤维复合材料（Carbon Fiber Composite）制成的引擎盖面板。覆盖从座舱后方到尾翼前缘的全部动力单元区域。2026年赛车引擎盖集成了鲨鱼鳍（Shark Fin）以增强侧风中的方向稳定性。' },
@@ -1099,12 +1139,17 @@
       });
     }
 
-    // Sync parts catalog to localStorage so admin page can read it
+    // Sync parts catalog to localStorage so admin page can read it (aggregate all cars)
     (function syncPartsCatalog() {
       try {
         const PARTS_KEY = 'f1-parts-catalog';
-        const names = [...new Set(Object.values(CAR.objectNames).map(o => o.zh))].sort();
-        localStorage.setItem(PARTS_KEY, JSON.stringify(names));
+        const allNames = new Set();
+        CARS.forEach(car => {
+          if (car.objectNames) {
+            Object.values(car.objectNames).forEach(o => allNames.add(o.zh));
+          }
+        });
+        localStorage.setItem(PARTS_KEY, JSON.stringify([...allNames].sort()));
       } catch {}
     })();
 
@@ -1136,8 +1181,8 @@
         this.scene.fog = new THREE.Fog('#1a1a1a', 8, 30);
 
         this.camera = new THREE.PerspectiveCamera(40, w / h, 0.1, 100);
-        this.camera.position.set(...CAR.cameraPos);
-        this.camera.lookAt(...CAR.cameraTarget);
+        this.camera.position.set(...currentCar.cameraPos);
+        this.camera.lookAt(...currentCar.cameraTarget);
 
         // Lights
         const ambient = new THREE.AmbientLight('#8899bb', 0.7);
@@ -1194,7 +1239,7 @@
         this.controls.update();
 
         this.defaultCameraPos = this.camera.position.clone();
-        this.defaultTarget = new THREE.Vector3(...CAR.cameraTarget);
+        this.defaultTarget = new THREE.Vector3(...currentCar.cameraTarget);
 
         this._cameraAnimTarget = null;
         this._cameraAnimStart = null;
@@ -1408,19 +1453,19 @@
           }
 
           // Explosion: per-axis magnification (relative to CINTURE_OFF center)
-          const mag = CAR.explosionMagnification;
+          const mag = currentCar.explosionMagnification;
           const original = center.clone().sub(this.cintureOffCenter);
 
           // Generate display name and description (use description from first mesh in group)
           const categoryZh = (CATEGORIES.find(c => c.id === group.category) || {}).labelZh || group.category;
           const descText = group.meshes[0]?.desc || `${categoryZh}组件 — ${zhName}。`;
-          const func = descText || `${categoryZh}组件 — ${zhName}。${CAR.name} 精密赛车部件。`;
-          const specs = [CAR.name, 'F1 2026赛季规格', `所属系统: ${categoryZh}`];
+          const func = descText || `${categoryZh}组件 — ${zhName}。${currentCar.name} 精密赛车部件。`;
+          const specs = [currentCar.name, `F1 ${currentCar.year}赛季规格`, `所属系统: ${categoryZh}`];
 
           const id = `part-${idx++}`;
 
           // Check for manual override
-          const override = CAR.explosionOverrides[zhName];
+          const override = currentCar.explosionOverrides[zhName];
           const explodedPos = override
             ? center.clone().add(new THREE.Vector3(...override))
             : new THREE.Vector3(
@@ -1817,8 +1862,61 @@
         this.clock = new THREE.Clock();
         this.animate();
 
+        // Populate car selector
+        this._populateCarSelector();
+
         // Load car
         await this.loadCar();
+      }
+
+      _populateCarSelector() {
+        const sel = document.getElementById('car-selector');
+        sel.innerHTML = CARS.map(c => `<option value="${c.id}">${c.name} (${c.year})</option>`).join('');
+        sel.value = currentCar.id;
+        sel.addEventListener('change', async () => {
+          const car = CARS.find(c => c.id === sel.value);
+          if (car && car !== currentCar) {
+            sel.disabled = true;
+            await this.switchCar(car);
+            sel.disabled = false;
+          }
+        });
+      }
+
+      async switchCar(car) {
+        currentCar = car;
+        _upgradesCache = null; // invalidate cache for new car
+
+        // Clean up old car
+        if (this.explosionController) {
+          this.explosionController.stopIntro();
+        }
+        if (this.interactionManager) {
+          this.interactionManager.deselect();
+        }
+        this.deselectPart();
+        if (this.extractor) {
+          this.sceneManager.scene.remove(this.extractor.pivotGroup);
+        }
+        this.parts = [];
+        this.explosionController = null;
+        this.interactionManager = null;
+
+        // Show loading
+        this.loadingOverlay.classList.remove('hidden');
+        this.progressFill.style.width = '0%';
+        this.progressFill.style.background = '';
+        this._lastDownloadPct = 0;
+        this.loadingText.textContent = `加载 ${currentCar.name}...`;
+        this.loadingSub.style.display = '';
+        this.loadingSub.textContent = `模型文件约 ${Math.round(currentCar.modelSizeEstimate / 1048576)} MB`;
+
+        // Load new car
+        try {
+          await this.loadCar();
+        } catch (err) {
+          console.error('Failed to switch car:', err);
+        }
       }
 
       async loadCar() {
@@ -1834,9 +1932,9 @@
         this.progressFill.style.width = '0%';
         this.progressFill.style.background = '';
         this._lastDownloadPct = 0;
-        this.loadingText.textContent = `加载 ${CAR.name}...`;
+        this.loadingText.textContent = `加载 ${currentCar.name}...`;
         this.loadingSub.style.display = '';
-        this.loadingSub.textContent = '模型文件约 4MB，首次加载请耐心等待';
+        this.loadingSub.textContent = `模型文件约 ${Math.round(currentCar.modelSizeEstimate / 1048576)} MB，首次加载请耐心等待`;
 
         // Clean up old parts
         if (this.extractor) {
@@ -1850,7 +1948,7 @@
         this.extractor = new ModelPartExtractor(this.sceneManager.scene);
 
         try {
-          this.parts = await this.extractor.loadAndExtract(CAR.modelPath, (pct, phase, info) => {
+          this.parts = await this.extractor.loadAndExtract(currentCar.modelPath, (pct, phase, info) => {
             // Compute percent once — only the indeterminate download branch uses a different value
             let percent = Math.round(pct * 100);
             if (phase === 'download') {
@@ -1861,7 +1959,7 @@
                 this.loadingSub.textContent = `${loadedMB} MB / ${totalMB} MB`;
               } else {
                 // No Content-Length — estimate from loaded bytes vs expected model size
-                const estimated = Math.min(Math.round((info.loaded / CAR.modelSizeEstimate) * 100), 90);
+                const estimated = Math.min(Math.round((info.loaded / currentCar.modelSizeEstimate) * 100), 90);
                 percent = Math.max(estimated, this._lastDownloadPct);
                 this._lastDownloadPct = percent;
                 this.loadingText.textContent = `下载模型中...`;
@@ -1879,7 +1977,7 @@
         } catch (err) {
           console.error('Failed to load model:', err);
           this._showLoadingEnd(
-            `<div style="text-align:center;color:#e74c3c;"><div style="font-size:1.2rem;margin-bottom:0.5rem;">❌ 模型加载失败</div><div style="font-size:0.7rem;margin-bottom:0.5rem;word-break:break-all;">${err.message || err}</div><div style="font-size:0.65rem;margin-top:0.5rem;color:#999;">${CAR.modelPath}</div></div>`,
+            `<div style="text-align:center;color:#e74c3c;"><div style="font-size:1.2rem;margin-bottom:0.5rem;">❌ 模型加载失败</div><div style="font-size:0.7rem;margin-bottom:0.5rem;word-break:break-all;">${err.message || err}</div><div style="font-size:0.65rem;margin-top:0.5rem;color:#999;">${currentCar.modelPath}</div></div>`,
             '请刷新页面重试，或检查网络连接', '#e74c3c', true);
           return;
         }
@@ -1896,8 +1994,8 @@
         }, 400);
 
         // Update camera
-        const cp = CAR.cameraPos;
-        const ct = CAR.cameraTarget;
+        const cp = currentCar.cameraPos;
+        const ct = currentCar.cameraTarget;
         this.sceneManager.camera.position.set(...cp);
         this.sceneManager.controls.target.set(...ct);
         this.sceneManager.defaultCameraPos = new THREE.Vector3(...cp);
@@ -1921,10 +2019,10 @@
           this.explosionController.startIntro();
           this.slider.value = 35;
           this.sliderValue.textContent = '35%';
-          this.toast.show(`🏎️ ${CAR.name} · 点击部件查看详情`, 5000);
+          this.toast.show(`🏎️ ${currentCar.name} · 点击部件查看详情`, 5000);
         }, 600);
 
-        this.toast.show(`✅ 已加载 ${CAR.name}`, 3000);
+        this.toast.show(`✅ 已加载 ${currentCar.name}`, 3000);
       }
 
       _showLoadingEnd(title, sub, color, isHtml = false) {
@@ -2107,7 +2205,7 @@
     const app = new App();
     app.init();
 
-    console.log(`🏎️  F1 Exploded View - ${CAR.name}`);
+    console.log(`🏎️  F1 Exploded View - ${currentCar.name}`);
     console.log('   glTF Model Loader ✓');
     console.log('   Part Extraction ✓');
     console.log('   Explosion Controller ✓');
