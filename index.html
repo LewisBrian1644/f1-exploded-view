@@ -397,6 +397,75 @@
       color: var(--color-primary);
     }
 
+    /* Upgrade history dropdown */
+    .upgrade-section {
+      margin-top: 14px;
+      border-top: 1px solid var(--color-border);
+      padding-top: 12px;
+    }
+    .upgrade-section[open] .upgrade-summary {
+      margin-bottom: 8px;
+    }
+    .upgrade-summary {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--color-text-muted);
+      list-style: none;
+      user-select: none;
+    }
+    .upgrade-summary::-webkit-details-marker {
+      display: none;
+    }
+    .upgrade-summary::before {
+      content: '▶ ';
+      font-size: 0.6rem;
+      transition: transform 0.2s;
+      display: inline-block;
+    }
+    .upgrade-section[open] .upgrade-summary::before {
+      transform: rotate(90deg);
+    }
+    .upgrade-count {
+      background: var(--color-primary);
+      color: #fff;
+      font-size: 0.65rem;
+      padding: 1px 7px;
+      border-radius: 10px;
+    }
+    .upgrade-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .upgrade-item {
+      background: var(--color-surface-alt);
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 0.7rem;
+    }
+    .upgrade-item .upgrade-race {
+      font-weight: 600;
+      color: var(--color-primary);
+      margin-bottom: 3px;
+    }
+    .upgrade-item .upgrade-purpose {
+      color: var(--color-text);
+      margin-bottom: 2px;
+    }
+    .upgrade-item .upgrade-date {
+      color: var(--color-text-muted);
+      font-size: 0.65rem;
+    }
+    .upgrade-empty {
+      font-size: 0.7rem;
+      color: var(--color-text-muted);
+      font-style: italic;
+    }
+
     /* ===== Bottom Bar - Explosion Slider ===== */
     #bottombar {
       grid-area: bottombar;
@@ -629,6 +698,14 @@
         <div class="part-name" id="info-name"></div>
         <p class="part-function" id="info-function"></p>
         <ul class="part-specs" id="info-specs"></ul>
+        <details class="upgrade-section" id="upgrade-section" style="display:none;">
+          <summary class="upgrade-summary">
+            <span>🔧 升级过程</span>
+            <span class="upgrade-count" id="upgrade-count"></span>
+          </summary>
+          <div class="upgrade-list" id="upgrade-list"></div>
+          <div class="upgrade-empty" id="upgrade-empty">暂无升级记录</div>
+        </details>
       </div>
     </aside>
 
@@ -975,6 +1052,56 @@
 
       mirrors:            { zh: '空气动力学后视镜', cat: 'aero', desc: '经过空气动力学优化的后视镜总成。F1后视镜不仅是视野工具，更是空气动力学装置——镜体、支架的截面形状和位置经过风洞和CFD优化，产生有益的涡流以管理侧箱上方的气流。后视镜的安装位置受FIA技术规则严格约束。' },
     };
+
+    // ===== Upgrade History =====
+    const UPGRADES_KEY = 'f1-upgrade-data';
+    const PARTS_KEY = 'f1-parts-catalog';
+
+    function loadUpgrades() {
+      try {
+        return JSON.parse(localStorage.getItem(UPGRADES_KEY)) || {};
+      } catch { return {}; }
+    }
+
+    function getPartUpgrades(partName) {
+      return loadUpgrades()[partName] || [];
+    }
+
+    function renderUpgradeList(partName) {
+      const section = document.getElementById('upgrade-section');
+      const list = document.getElementById('upgrade-list');
+      const empty = document.getElementById('upgrade-empty');
+      const count = document.getElementById('upgrade-count');
+      const upgrades = getPartUpgrades(partName);
+
+      if (upgrades.length === 0) {
+        section.style.display = 'none';
+        return;
+      }
+
+      section.style.display = '';
+      count.textContent = `${upgrades.length} 次`;
+      empty.style.display = 'none';
+      list.style.display = '';
+      list.innerHTML = upgrades.map((u, i) => `
+        <div class="upgrade-item">
+          <div class="upgrade-race">${i + 1}. ${u.race}</div>
+          <div class="upgrade-purpose">目的：${u.purpose}</div>
+          ${u.date ? `<div class="upgrade-date">${u.date}</div>` : ''}
+        </div>
+      `).join('');
+    }
+
+    // Sync parts catalog to localStorage so admin page can read it
+    function syncPartsCatalog() {
+      try {
+        if (!localStorage.getItem(PARTS_KEY)) {
+          const names = [...new Set(Object.values(CAR.objectNames).map(o => o.zh))].sort();
+          localStorage.setItem(PARTS_KEY, JSON.stringify(names));
+        }
+      } catch {}
+    }
+    syncPartsCatalog();
 
     // ===== SceneManager =====
     class SceneManager {
@@ -1582,12 +1709,42 @@
         }
       }
 
+      _createOutlineMeshes(part) {
+        // Create a white edge-glow outline using the inverted-hull technique:
+        // render the back-faces slightly scaled up so only the "rim" shows.
+        const outlines = [];
+        part.pivot.traverse(child => {
+          if (child.isMesh && child.material) {
+            const outline = child.clone();
+            outline.material = new THREE.MeshBasicMaterial({
+              color: 0xffffff,
+              side: THREE.BackSide,
+              transparent: true,
+              opacity: 0.7,
+              depthWrite: false,
+            });
+            outline.scale.set(1.04, 1.04, 1.04);
+            outlines.push(outline);
+          }
+        });
+        return outlines;
+      }
+
       _setSelectHighlight(part) {
-        this._modifyEmissive(part, '#ff6600', 0.7);
+        // White edge glow via inverted-hull outline meshes
+        if (!part._outlines) {
+          part._outlines = this._createOutlineMeshes(part);
+          part._outlines.forEach(o => part.pivot.add(o));
+        }
       }
 
       _resetSelectHighlight(part) {
-        this._modifyEmissive(part, '#000000', 0);
+        if (part._outlines) {
+          part._outlines.forEach(o => {
+            if (o.parent) o.parent.remove(o);
+          });
+          part._outlines = null;
+        }
       }
 
       deselect() {
@@ -1893,6 +2050,11 @@
 
         this.infoPanel.classList.add('has-selection');
         this.infoPanel.classList.remove('hidden');
+
+        // Show upgrade history for this part
+        renderUpgradeList(part.zh || part.meshName);
+        // Collapse the <details> when switching parts
+        document.getElementById('upgrade-section').open = false;
 
         if (window.innerWidth <= 860) {
           this.infoPanel.classList.add('sheet-open');
