@@ -770,6 +770,7 @@
         cameraTarget: [0, 0.2, 0.5],
         explosionOverrides: {},
         explosionMagnification: { x: 3, y: 13, z: 3 },
+        modelScale: 1,
       },
       {
         id: 'sf90',
@@ -781,6 +782,7 @@
         cameraTarget: [0, 0.2, 0.5],
         explosionOverrides: {},
         explosionMagnification: { x: 3, y: 13, z: 3 },
+        modelScale: 1,
       },
       {
         id: 'sf23',
@@ -792,6 +794,7 @@
         cameraTarget: [0, 0.2, 0.5],
         explosionOverrides: {},
         explosionMagnification: { x: 3, y: 13, z: 3 },
+        modelScale: 1,
       },
       {
         id: 'rb21',
@@ -803,6 +806,7 @@
         cameraTarget: [0, 0.2, 0.5],
         explosionOverrides: {},
         explosionMagnification: { x: 3, y: 13, z: 3 },
+        modelScale: 100,
       },
     ];
     let currentCar = CARS[0];
@@ -1336,7 +1340,11 @@
         if (onProgress) onProgress(0.90, 'parse');
         const model = gltf.scene;
 
-        // Update world matrices after loading
+        // Apply per-model scale (different 3D sources use different units)
+        const modelScale = currentCar.modelScale || 1;
+        if (modelScale !== 1) model.scale.setScalar(modelScale);
+
+        // Update world matrices after loading (must happen AFTER scale)
         model.updateWorldMatrix(true, true);
 
         // Collect all meshes with their FULL world transforms
