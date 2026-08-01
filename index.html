@@ -1054,17 +1054,22 @@
     };
 
     // ===== Upgrade History =====
-    const UPGRADES_KEY = 'f1-upgrade-data';
-    const PARTS_KEY = 'f1-parts-catalog';
+    // Upgrade data is stored in upgrades.json (updated via admin page + GitHub API).
+    // All visitors fetch the deployed file — no localStorage dependency.
+    let _upgradesCache = null;
 
-    function loadUpgrades() {
+    async function loadUpgrades() {
+      if (_upgradesCache) return _upgradesCache;
       try {
-        return JSON.parse(localStorage.getItem(UPGRADES_KEY)) || {};
-      } catch { return {}; }
-    }
-
-    function getPartUpgrades(partName) {
-      return loadUpgrades()[partName] || [];
+        // Cache-bust with ?t= to avoid stale browser cache after each deploy
+        const resp = await fetch(`upgrades.json?t=${Date.now()}`);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        _upgradesCache = await resp.json();
+      } catch (e) {
+        console.warn('Failed to load upgrades.json, using empty data:', e.message);
+        _upgradesCache = {};
+      }
+      return _upgradesCache;
     }
 
     function renderUpgradeList(partName) {
@@ -1072,36 +1077,36 @@
       const list = document.getElementById('upgrade-list');
       const empty = document.getElementById('upgrade-empty');
       const count = document.getElementById('upgrade-count');
-      const upgrades = getPartUpgrades(partName);
 
-      if (upgrades.length === 0) {
-        section.style.display = 'none';
-        return;
-      }
-
-      section.style.display = '';
-      count.textContent = `${upgrades.length} 次`;
-      empty.style.display = 'none';
-      list.style.display = '';
-      list.innerHTML = upgrades.map((u, i) => `
-        <div class="upgrade-item">
-          <div class="upgrade-race">${i + 1}. ${u.race}</div>
-          <div class="upgrade-purpose">目的：${u.purpose}</div>
-          ${u.date ? `<div class="upgrade-date">${u.date}</div>` : ''}
-        </div>
-      `).join('');
+      // Load async and populate
+      loadUpgrades().then(upgrades => {
+        const partUpgrades = upgrades[partName] || [];
+        if (partUpgrades.length === 0) {
+          section.style.display = 'none';
+          return;
+        }
+        section.style.display = '';
+        count.textContent = `${partUpgrades.length} 次`;
+        empty.style.display = 'none';
+        list.style.display = '';
+        list.innerHTML = partUpgrades.map((u, i) => `
+          <div class="upgrade-item">
+            <div class="upgrade-race">${i + 1}. ${u.race}</div>
+            <div class="upgrade-purpose">目的：${u.purpose}</div>
+            ${u.date ? `<div class="upgrade-date">${u.date}</div>` : ''}
+          </div>
+        `).join('');
+      });
     }
 
     // Sync parts catalog to localStorage so admin page can read it
-    function syncPartsCatalog() {
+    (function syncPartsCatalog() {
       try {
-        if (!localStorage.getItem(PARTS_KEY)) {
-          const names = [...new Set(Object.values(CAR.objectNames).map(o => o.zh))].sort();
-          localStorage.setItem(PARTS_KEY, JSON.stringify(names));
-        }
+        const PARTS_KEY = 'f1-parts-catalog';
+        const names = [...new Set(Object.values(CAR.objectNames).map(o => o.zh))].sort();
+        localStorage.setItem(PARTS_KEY, JSON.stringify(names));
       } catch {}
-    }
-    syncPartsCatalog();
+    })();
 
     // ===== SceneManager =====
     class SceneManager {

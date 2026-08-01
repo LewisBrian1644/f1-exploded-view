@@ -6,123 +6,76 @@
   <title>F1 升级记录管理</title>
   <style>
     :root {
-      --bg: #1a1a1a;
-      --surface: #2a2a2a;
-      --surface-alt: #333;
-      --border: #444;
-      --text: #ddd;
-      --text-muted: #999;
-      --primary: #f39c12;
-      --danger: #e74c3c;
-      --success: #2ecc71;
+      --bg: #1a1a1a; --surface: #2a2a2a; --surface-alt: #333;
+      --border: #444; --text: #ddd; --text-muted: #999;
+      --primary: #f39c12; --danger: #e74c3c; --success: #2ecc71;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: -apple-system, "Microsoft YaHei", sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      padding: 20px;
+      background: var(--bg); color: var(--text); min-height: 100vh; padding: 20px;
     }
     .container { max-width: 800px; margin: 0 auto; }
-    h1 { font-size: 1.4rem; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
-    .subtitle { color: var(--text-muted); font-size: 0.8rem; margin-bottom: 24px; }
+    h1 { font-size: 1.4rem; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+    .subtitle { color: var(--text-muted); font-size: 0.8rem; margin-bottom: 20px; }
+    .subtitle a { color: var(--primary); }
 
-    /* Part selector */
     .section {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 16px;
-      margin-bottom: 16px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 16px; margin-bottom: 16px;
     }
-    .section-title {
-      font-size: 0.85rem;
-      font-weight: 600;
-      margin-bottom: 12px;
-      color: var(--primary);
-    }
-    label {
-      display: block;
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      margin-bottom: 4px;
-      margin-top: 10px;
-    }
+    .section-title { font-size: 0.85rem; font-weight: 600; margin-bottom: 12px; color: var(--primary); }
+    label { display: block; font-size: 0.75rem; color: var(--text-muted); margin: 10px 0 4px; }
     label:first-of-type { margin-top: 0; }
     select, input, textarea {
-      width: 100%;
-      padding: 8px 10px;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      color: var(--text);
-      font-size: 0.8rem;
-      font-family: inherit;
+      width: 100%; padding: 8px 10px; background: var(--bg);
+      border: 1px solid var(--border); border-radius: 6px;
+      color: var(--text); font-size: 0.8rem; font-family: inherit;
     }
-    select:focus, input:focus, textarea:focus {
-      outline: none;
-      border-color: var(--primary);
-    }
+    select:focus, input:focus, textarea:focus { outline: none; border-color: var(--primary); }
     textarea { resize: vertical; min-height: 60px; }
     .btn-row { display: flex; gap: 8px; margin-top: 12px; }
     button {
-      padding: 8px 16px;
-      border: none;
-      border-radius: 6px;
-      font-size: 0.8rem;
-      cursor: pointer;
-      font-family: inherit;
-      font-weight: 600;
-      transition: opacity 0.15s;
+      padding: 8px 16px; border: none; border-radius: 6px;
+      font-size: 0.8rem; cursor: pointer; font-family: inherit; font-weight: 600;
     }
     button:hover { opacity: 0.85; }
     .btn-primary { background: var(--primary); color: #000; }
     .btn-danger { background: var(--danger); color: #fff; }
     .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
 
-    /* Existing records */
+    .token-hint { font-size: 0.65rem; color: var(--text-muted); margin-top: 4px; }
+    .token-hint a { color: var(--primary); }
+
+    .status-bar {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.7rem; color: var(--text-muted); margin-bottom: 12px;
+    }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); }
+    .status-dot.ok { background: var(--success); }
+    .status-dot.err { background: var(--danger); }
+
     .record-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
     .record {
-      background: var(--surface-alt);
-      border-radius: 6px;
-      padding: 10px 12px;
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 12px;
+      background: var(--surface-alt); border-radius: 6px; padding: 10px 12px;
+      display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
     }
     .record-info { flex: 1; min-width: 0; }
     .record-race { font-weight: 600; color: var(--primary); font-size: 0.8rem; }
     .record-purpose { font-size: 0.75rem; margin-top: 2px; }
     .record-date { font-size: 0.65rem; color: var(--text-muted); margin-top: 2px; }
     .record-del {
-      background: none;
-      border: none;
-      color: var(--danger);
-      cursor: pointer;
-      font-size: 1.1rem;
-      padding: 0 4px;
-      flex-shrink: 0;
+      background: none; border: none; color: var(--danger);
+      cursor: pointer; font-size: 1.1rem; padding: 0 4px; flex-shrink: 0;
     }
     .empty-hint { color: var(--text-muted); font-size: 0.75rem; font-style: italic; margin-top: 10px; }
 
-    /* Toast */
     .toast {
-      position: fixed;
-      bottom: 24px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: var(--success);
-      color: #000;
-      padding: 10px 20px;
-      border-radius: 8px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      opacity: 0;
-      transition: opacity 0.3s;
-      pointer-events: none;
-      z-index: 99;
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: var(--success); color: #000; padding: 10px 20px;
+      border-radius: 8px; font-size: 0.8rem; font-weight: 600;
+      opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 99;
     }
     .toast.show { opacity: 1; }
     .toast.error { background: var(--danger); color: #fff; }
@@ -131,15 +84,34 @@
 <body>
   <div class="container">
     <h1>🔧 F1 部件升级记录</h1>
-    <p class="subtitle">管理员页面 — 管理与提交各部件在赛季中的升级历史 | <a href="./" style="color:var(--primary);">返回3D查看器</a></p>
+    <p class="subtitle">
+      管理员页面 — 提交后自动同步到网站 | <a href="./">返回3D查看器</a>
+    </p>
 
-    <div class="section">
-      <div class="section-title">选择部件</div>
-      <select id="part-select">
-        <option value="">-- 请选择部件 --</option>
-      </select>
+    <!-- Token setup -->
+    <div class="section" id="token-section">
+      <div class="section-title">🔑 GitHub Token 配置</div>
+      <label>GitHub Personal Access Token</label>
+      <input type="password" id="github-token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+      <div class="token-hint">
+        需要 <code>repo</code> 权限。在 <a href="https://github.com/settings/tokens" target="_blank">GitHub → Settings → Tokens</a> 创建 Classic token
+      </div>
+      <div class="btn-row">
+        <button class="btn-primary" id="btn-save-token">保存并加载数据</button>
+      </div>
+      <div class="status-bar" id="status-bar" style="display:none;margin-top:10px;">
+        <span class="status-dot" id="status-dot"></span>
+        <span id="status-text"></span>
+      </div>
     </div>
 
+    <!-- Part selector -->
+    <div class="section" id="part-section" style="display:none;">
+      <div class="section-title">选择部件</div>
+      <select id="part-select"><option value="">-- 请选择部件 --</option></select>
+    </div>
+
+    <!-- Add form -->
     <div class="section" id="form-section" style="display:none;">
       <div class="section-title">➕ 添加升级记录</div>
       <label>赛事/站名</label>
@@ -149,10 +121,11 @@
       <label>日期 (可选)</label>
       <input type="date" id="new-date">
       <div class="btn-row">
-        <button class="btn-primary" id="btn-add">添加记录</button>
+        <button class="btn-primary" id="btn-add">添加并同步</button>
       </div>
     </div>
 
+    <!-- Records list -->
     <div class="section" id="records-section" style="display:none;">
       <div class="section-title">📋 现有记录</div>
       <div class="record-list" id="record-list"></div>
@@ -162,54 +135,113 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    const UPGRADES_KEY = 'f1-upgrade-data';
-    const PARTS_KEY = 'f1-parts-catalog';
+    const REPO_OWNER = 'LewisBrian1644';
+    const REPO_NAME = 'f1-exploded-view';
+    const FILE_PATH = 'upgrades.json';
+    const BRANCH = 'master';
 
-    // ── Part catalog (synced from main app CAR.objectNames) ──
+    // ── Part catalog (synced from main app, with hardcoded fallback) ──
+    const PARTS_KEY = 'f1-parts-catalog';
     const DEFAULT_PARTS = [
-      '前翼', '单体壳', '单体壳+底板', '挡风玻璃', '方向盘',
-      '头枕', '安全带打开', '安全带关闭',
-      '座舱', '后引擎盖', '尾灯', '尾翼', '尾翼支架', '排气管',
-      '空气动力学套件', '后视镜框', '后视镜支架1', '后视镜支架2',
-      '右后视镜', '左后视镜', '天线', '散热口支架',
-      '右前轮', '左前轮', '右后轮', '左后轮',
-      '右前悬挂', '左前悬挂', '右后悬挂', '左后悬挂',
-      '右前刹车鼓', '左前刹车鼓', '右后刹车鼓', '左后刹车鼓',
+      '前翼','单体壳','单体壳+底板','挡风玻璃','方向盘','头枕',
+      '安全带打开','安全带关闭','座舱','后引擎盖','尾灯','尾翼','尾翼支架',
+      '排气管','空气动力学套件','后视镜框','后视镜支架1','后视镜支架2',
+      '右后视镜','左后视镜','天线','散热口支架',
+      '右前轮','左前轮','右后轮','左后轮',
+      '右前悬挂','左前悬挂','右后悬挂','左后悬挂',
+      '右前刹车鼓','左前刹车鼓','右后刹车鼓','左后刹车鼓',
     ];
 
-    const partSelect = document.getElementById('part-select');
+    // ── State ──
+    let upgrades = {};
+    let fileSha = null;
+
+    // ── DOM refs ──
+    const tokenSection = document.getElementById('token-section');
+    const partSection = document.getElementById('part-section');
     const formSection = document.getElementById('form-section');
     const recordsSection = document.getElementById('records-section');
+    const tokenInput = document.getElementById('github-token');
+    const partSelect = document.getElementById('part-select');
     const recordList = document.getElementById('record-list');
     const emptyHint = document.getElementById('empty-hint');
+    const statusBar = document.getElementById('status-bar');
+    const statusDot = document.getElementById('status-dot');
+    const statusText = document.getElementById('status-text');
     const toast = document.getElementById('toast');
 
-    // ── Data helpers ──
-    function loadUpgrades() {
-      try { return JSON.parse(localStorage.getItem(UPGRADES_KEY)) || {}; }
-      catch { return {}; }
+    function getToken() {
+      return localStorage.getItem('f1-gh-token') || '';
     }
-    function saveUpgrades(data) {
-      localStorage.setItem(UPGRADES_KEY, JSON.stringify(data));
-    }
-    function loadParts() {
-      try { return JSON.parse(localStorage.getItem(PARTS_KEY)) || DEFAULT_PARTS; }
-      catch { return DEFAULT_PARTS; }
-    }
-    function saveParts(parts) {
-      localStorage.setItem(PARTS_KEY, JSON.stringify(parts));
+    function saveToken(t) {
+      localStorage.setItem('f1-gh-token', t);
     }
 
-    // ── Init ──
+    // ── Toast ──
+    function showToast(msg, isError = false) {
+      toast.textContent = msg;
+      toast.className = 'toast' + (isError ? ' error' : '') + ' show';
+      setTimeout(() => toast.classList.remove('show'), 2500);
+    }
+
+    // ── Status ──
+    function setStatus(ok, msg) {
+      statusBar.style.display = '';
+      statusDot.className = 'status-dot ' + (ok ? 'ok' : 'err');
+      statusText.textContent = msg;
+    }
+
+    // ── GitHub API ──
+    async function fetchUpgradesFromGitHub() {
+      const token = getToken();
+      const resp = await fetch(
+        `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}?ref=${BRANCH}`,
+        { headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' } }
+      );
+      if (!resp.ok) throw new Error(`GitHub API: ${resp.status} ${resp.statusText}`);
+      const data = await resp.json();
+      fileSha = data.sha;
+      // Decode base64 content (GitHub returns base64)
+      const raw = atob(data.content.replace(/\n/g, ''));
+      return JSON.parse(raw);
+    }
+
+    async function commitUpgradesToGitHub() {
+      const token = getToken();
+      const content = btoa(unescape(encodeURIComponent(JSON.stringify(upgrades, null, 2))));
+      const body = {
+        message: `update upgrades.json — ${new Date().toLocaleDateString('zh-CN')}`,
+        content: content,
+        branch: BRANCH,
+      };
+      if (fileSha) body.sha = fileSha;
+
+      const resp = await fetch(
+        `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`,
+        {
+          method: 'PUT',
+          headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json', Accept: 'application/vnd.github.v3+json' },
+          body: JSON.stringify(body),
+        }
+      );
+      if (!resp.ok) {
+        const err = await resp.json();
+        throw new Error(err.message || `GitHub API: ${resp.status}`);
+      }
+      const data = await resp.json();
+      fileSha = data.content.sha; // new SHA after commit
+    }
+
+    // ── UI ──
     function initPartSelect() {
-      const parts = loadParts();
+      let parts;
+      try { parts = JSON.parse(localStorage.getItem(PARTS_KEY)); } catch {}
+      if (!parts || !parts.length) parts = DEFAULT_PARTS;
       partSelect.innerHTML = '<option value="">-- 请选择部件 --</option>' +
         parts.map(p => `<option value="${p}">${p}</option>`).join('');
     }
 
-    function getSelectedPart() {
-      return partSelect.value || null;
-    }
+    function getSelectedPart() { return partSelect.value || null; }
 
     function renderRecords() {
       const partName = getSelectedPart();
@@ -218,19 +250,15 @@
         recordsSection.style.display = 'none';
         return;
       }
-
       formSection.style.display = '';
       recordsSection.style.display = '';
-
-      const all = loadUpgrades();
-      const upgrades = all[partName] || [];
-
-      if (upgrades.length === 0) {
+      const partUpgrades = upgrades[partName] || [];
+      if (partUpgrades.length === 0) {
         recordList.innerHTML = '';
         emptyHint.style.display = '';
       } else {
         emptyHint.style.display = 'none';
-        recordList.innerHTML = upgrades.map((u, i) => `
+        recordList.innerHTML = partUpgrades.map((u, i) => `
           <div class="record">
             <div class="record-info">
               <div class="record-race">${i + 1}. ${u.race}</div>
@@ -243,56 +271,103 @@
       }
     }
 
-    function showToast(msg, isError = false) {
-      toast.textContent = msg;
-      toast.className = 'toast' + (isError ? ' error' : '') + ' show';
-      setTimeout(() => toast.classList.remove('show'), 2000);
-    }
+    // ── Init: load token and data ──
+    document.getElementById('btn-save-token').addEventListener('click', async () => {
+      const token = tokenInput.value.trim();
+      if (!token) { showToast('请输入 GitHub Token', true); return; }
+      saveToken(token);
+      try {
+        setStatus(false, '正在从 GitHub 加载数据...');
+        upgrades = await fetchUpgradesFromGitHub();
+        setStatus(true, '数据已加载 — 就绪');
+        tokenSection.querySelector('.section-title').textContent = '🔑 GitHub Token（已保存）';
+        partSection.style.display = '';
+        initPartSelect();
+        showToast('✅ Token 有效，数据已加载');
+      } catch (err) {
+        setStatus(false, `加载失败: ${err.message}`);
+        showToast('加载失败: ' + err.message, true);
+      }
+    });
 
-    // ── Events ──
+    // Try auto-load if token exists
+    (async function autoLoad() {
+      const saved = getToken();
+      if (!saved) return;
+      tokenInput.value = saved;
+      try {
+        upgrades = await fetchUpgradesFromGitHub();
+        setStatus(true, '数据已加载 — 就绪');
+        tokenSection.querySelector('.section-title').textContent = '🔑 GitHub Token（已保存）';
+        partSection.style.display = '';
+        initPartSelect();
+      } catch (e) {
+        setStatus(false, '自动加载失败，请重新保存 Token');
+      }
+    })();
+
+    // ── Part selection ──
     partSelect.addEventListener('change', renderRecords);
 
-    document.getElementById('btn-add').addEventListener('click', () => {
+    // ── Add record ──
+    document.getElementById('btn-add').addEventListener('click', async () => {
       const partName = getSelectedPart();
       const race = document.getElementById('new-race').value.trim();
       const purpose = document.getElementById('new-purpose').value.trim();
       const date = document.getElementById('new-date').value;
 
       if (!partName || !race || !purpose) {
-        showToast('请填写赛事名称和升级目的', true);
-        return;
+        showToast('请填写部件、赛事和升级目的', true); return;
       }
 
-      const all = loadUpgrades();
-      if (!all[partName]) all[partName] = [];
-      all[partName].push({ race, purpose, date: date || null });
-      saveUpgrades(all);
+      // Update local state
+      if (!upgrades[partName]) upgrades[partName] = [];
+      upgrades[partName].push({ race, purpose, date: date || null });
 
-      // Clear form
-      document.getElementById('new-race').value = '';
-      document.getElementById('new-purpose').value = '';
-      document.getElementById('new-date').value = '';
-
-      renderRecords();
-      showToast('✅ 升级记录已添加');
+      // Push to GitHub
+      try {
+        document.getElementById('btn-add').disabled = true;
+        document.getElementById('btn-add').textContent = '正在同步到 GitHub...';
+        await commitUpgradesToGitHub();
+        showToast('✅ 已同步 — 1-2 分钟后网站上可见');
+        // Clear form
+        document.getElementById('new-race').value = '';
+        document.getElementById('new-purpose').value = '';
+        document.getElementById('new-date').value = '';
+        renderRecords();
+      } catch (err) {
+        // Rollback
+        upgrades[partName].pop();
+        if (upgrades[partName].length === 0) delete upgrades[partName];
+        showToast('同步失败: ' + err.message, true);
+      } finally {
+        document.getElementById('btn-add').disabled = false;
+        document.getElementById('btn-add').textContent = '添加并同步';
+      }
     });
 
-    recordList.addEventListener('click', (e) => {
+    // ── Delete record ──
+    recordList.addEventListener('click', async (e) => {
       if (!e.target.classList.contains('record-del')) return;
       const idx = parseInt(e.target.dataset.index);
       const partName = getSelectedPart();
       if (!partName) return;
 
-      const all = loadUpgrades();
-      all[partName].splice(idx, 1);
-      if (all[partName].length === 0) delete all[partName];
-      saveUpgrades(all);
-      renderRecords();
-      showToast('已删除');
-    });
+      const removed = upgrades[partName].splice(idx, 1)[0];
+      if (upgrades[partName].length === 0) delete upgrades[partName];
 
-    // Init
-    initPartSelect();
+      try {
+        await commitUpgradesToGitHub();
+        showToast('已删除并同步');
+        renderRecords();
+      } catch (err) {
+        // Rollback
+        if (!upgrades[partName]) upgrades[partName] = [];
+        upgrades[partName].splice(idx, 0, removed);
+        showToast('删除失败: ' + err.message, true);
+        renderRecords();
+      }
+    });
   </script>
 </body>
 </html>
