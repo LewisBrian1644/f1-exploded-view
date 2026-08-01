@@ -1565,6 +1565,10 @@
         this._applyFactors();
       }
 
+      stopIntro() {
+        this.introPlaying = false;
+      }
+
       setGlobalFactor(factor) {
         this.globalFactor = factor;
         this._applyFactors();
